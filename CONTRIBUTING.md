@@ -102,7 +102,7 @@ Creating a pull request is a critical step in contributing to our project. Here'
 1. **Ensure Your Branch is Up-to-Date**: Before starting, make sure your branch is up-to-date with the branch you're
    planning to merge into.
 
-2. **Check Your Changes**: 
+2. **Check Your Changes**:
     - Run `tox` to check your changes. Ensure all tests pass and the code is formatted correctly.
 
 3. **Commit Your Changes**: Commit your changes with clear, descriptive commit messages.

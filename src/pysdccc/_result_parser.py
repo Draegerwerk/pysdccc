@@ -125,5 +125,6 @@ class TestSuite(junitparser.TestSuite):
         """
         suite = junitparser.JUnitXml.fromfile(str(file))
         if not isinstance(suite, junitparser.TestSuite):
-            raise TypeError(f'Expected class {junitparser.TestSuite}, got {type(suite)}')
+            msg = f'Expected class {junitparser.TestSuite}, got {type(suite)}'
+            raise TypeError(msg)
         return cls.fromelem(suite)  # type: ignore[no-untyped-call,no-any-return]

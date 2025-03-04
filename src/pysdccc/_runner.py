@@ -74,8 +74,9 @@ def get_exe_path(local_path: pathlib.Path) -> pathlib.Path:
     :raises FileNotFoundError: If no executable file or more than one executable file is found in the specified path.
     """
     files = [f for f in local_path.glob('*.exe') if f.is_file()]
-    if not len(files) == 1:
-        raise FileNotFoundError(f'Unable to determine correct executable file, got {files} in path {local_path}')
+    if len(files) != 1:
+        msg = f'Unable to determine correct executable file, got {files} in path {local_path}'
+        raise FileNotFoundError(msg)
     return files[0]
 
 
@@ -107,12 +108,14 @@ def check_requirements(provided: dict[str, dict[str, bool]], available: dict[str
     """
     for standard, requirements in provided.items():
         if standard not in available:
-            raise KeyError(f'Unsupported standard "{standard}". Supported standards are "{list(available)}"')
+            msg = f'Unsupported standard "{standard}". Supported standards are "{list(available)}"'
+            raise KeyError(msg)
         provided_enabled = [req for req, enabled in requirements.items() if enabled]
         available_enabled = [a for a, enabled in available[standard].items() if enabled]
         for req in provided_enabled:
             if req not in available_enabled:
-                raise KeyError(f'Requirement id "{standard}.{req}" not found')
+                msg = f'Requirement id "{standard}.{req}" not found'
+                raise KeyError(msg)
 
 
 class _BaseRunner:
@@ -133,16 +136,21 @@ class _BaseRunner:
         try:
             self.exe = pathlib.Path(exe) if exe is not None else get_exe_path(DEFAULT_STORAGE_DIRECTORY).absolute()
         except FileNotFoundError as e:
-            raise FileNotFoundError('Have you downloaded sdccc?') from e
+            msg = 'Have you downloaded sdccc?'
+            raise FileNotFoundError(msg) from e
         if not self.exe.is_absolute():
-            raise ValueError('Path to executable must be absolute')
+            msg = 'Path to executable must be absolute'
+            raise ValueError(msg)
         if not self.exe.is_file():
-            raise FileNotFoundError(f'No executable found under {self.exe}')
+            msg = f'No executable found under {self.exe}'
+            raise FileNotFoundError(msg)
         self.test_run_dir = pathlib.Path(test_run_dir)
         if not self.test_run_dir.is_absolute():
-            raise ValueError('Path to test run directory must be absolute')
+            msg = 'Path to test run directory must be absolute'
+            raise ValueError(msg)
         if not self.test_run_dir.is_dir():
-            raise ValueError('Test run directory is not a directory')
+            msg = 'Test run directory is not a directory'
+            raise ValueError(msg)
 
     def get_config(self) -> dict[str, typing.Any]:
         """Get the default configuration.
@@ -206,11 +214,14 @@ class _BaseRunner:
         **kwargs: typing.Any,
     ) -> list[str]:
         if not config.is_absolute():
-            raise ValueError('Path to config file must be absolute')
+            msg = 'Path to config file must be absolute'
+            raise ValueError(msg)
         if not requirements.is_absolute():
-            raise ValueError('Path to requirements file must be absolute')
+            msg = 'Path to requirements file must be absolute'
+            raise ValueError(msg)
         if list(self.test_run_dir.iterdir()):
-            raise ValueError(f'{self.test_run_dir} is not empty')
+            msg = f'{self.test_run_dir} is not empty'
+            raise ValueError(msg)
 
         kwargs['no_subdirectories'] = 'true'
         kwargs['test_run_directory'] = self.test_run_dir
@@ -283,7 +294,8 @@ class _SdcccSubprocessProtocol(asyncio.SubprocessProtocol):
         elif fd == self._STDERR:
             self.logger.error(data.decode(_common.ENCODING).rstrip())
         else:
-            raise RuntimeError(f'Unexpected file descriptor {fd}')
+            msg = f'Unexpected file descriptor {fd}'
+            raise RuntimeError(msg)
 
     def connection_lost(self, exc: Exception | None):
         self.closed_event.set()
@@ -340,7 +352,8 @@ class SdcccRunnerAsync(_BaseRunner):
         await protocol.closed_event.wait()
         return_code = transport.get_returncode()
         if return_code is None:
-            raise RuntimeError('Process did not exit')
+            msg = 'Process did not exit'
+            raise RuntimeError(msg)
         return (
             return_code,
             self._get_result(DIRECT_TEST_RESULT_FILE_NAME),

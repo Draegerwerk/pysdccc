@@ -241,13 +241,6 @@ dev = [
     { name = "pytest-html" },
     { name = "ruff" },
 ]
-pyright = [
-    { name = "lxml-stubs" },
-    { name = "pyright" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-html" },
-]
 test = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
@@ -270,13 +263,6 @@ dev = [
     { name = "pytest-asyncio", specifier = ">=0.24" },
     { name = "pytest-html", specifier = ">=4" },
     { name = "ruff", specifier = ">=0.9.6" },
-]
-pyright = [
-    { name = "lxml-stubs", specifier = ">=0.5.1" },
-    { name = "pyright", specifier = ">=1.1.391" },
-    { name = "pytest", specifier = ">=8" },
-    { name = "pytest-asyncio", specifier = ">=0.24" },
-    { name = "pytest-html", specifier = ">=4" },
 ]
 test = [
     { name = "pytest", specifier = ">=8" },

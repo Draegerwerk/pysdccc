@@ -52,33 +52,18 @@ cli = [
     "click>=8.0",
 ]
 
-[tool.hatch.build.targets.wheel]  # https://github.com/astral-sh/uv/issues/11557#issuecomment-2661521666
-packages = ["src/pysdccc"]
-
-[tool.hatch.build.targets.sdist]  # https://github.com/astral-sh/uv/issues/11557#issuecomment-2661521666
-only-include = ["src"]
-
 [tool.hatch.version]
 path = "src/pysdccc/__init__.py"
 
 [tool.ruff]
 lint.select = ["ALL"]  # https://docs.astral.sh/ruff/settings/#select
 lint.extend-ignore = [# https://docs.astral.sh/ruff/settings/#extend-ignore
-    "ANN204", # https://docs.astral.sh/ruff/rules/missing-return-type-special-method/
-    "ANN401", # https://docs.astral.sh/ruff/rules/any-type/
-    "C408", # https://docs.astral.sh/ruff/rules/unnecessary-collection-call/
-    "C409", # https://docs.astral.sh/ruff/rules/unnecessary-literal-within-tuple-call/
-    "D105", # undocumented-magic-method
-    "D107", # undocumented-public-init
-    "D203", # one-blank-line-before-class
-    "D213", # multi-line-summary-second-line
-    "EM101", # https://docs.astral.sh/ruff/rules/raw-string-in-exception/
-    "EM102", # https://docs.astral.sh/ruff/rules/f-string-in-exception/
+    "COM812", # https://docs.astral.sh/ruff/rules/missing-trailing-comma/
+    "D107", # https://docs.astral.sh/ruff/rules/undocumented-public-init/
+    "D203", # https://docs.astral.sh/ruff/rules/incorrect-blank-line-before-class/
+    "D213", # https://docs.astral.sh/ruff/rules/multi-line-summary-second-line/
     "S101", # https://docs.astral.sh/ruff/rules/assert/
     "S311", # https://docs.astral.sh/ruff/rules/suspicious-non-cryptographic-random-usage/
-    "SIM102", # collapsible-if
-    "T201", # https://docs.astral.sh/ruff/rules/print/
-    "TRY003", #https://docs.astral.sh/ruff/rules/raise-vanilla-args/
 ]
 
 line-length = 120  # https://docs.astral.sh/ruff/settings/#line-length

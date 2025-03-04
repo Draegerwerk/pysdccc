@@ -5,7 +5,6 @@ import subprocess
 import sys
 import tempfile
 import zipfile
-from typing import Any
 
 import httpx
 
@@ -14,7 +13,8 @@ from pysdccc import _runner
 try:
     import click
 except ImportError as import_error:
-    raise ImportError("Cli not installed. Please install using 'pip install pysdccc[cli].") from import_error
+    msg = "Cli not installed. Please install using 'pip install pysdccc[cli]."
+    raise ImportError(msg) from import_error
 
 
 class UrlType(click.ParamType):
@@ -33,7 +33,7 @@ URL = UrlType()
 class ProxyType(click.ParamType):
     name = 'proxy'
 
-    def convert(self, value: str, param: Any, ctx: Any) -> httpx.Proxy:
+    def convert(self, value: str, param: click.Parameter | None, ctx: click.Context | None) -> httpx.Proxy:
         try:
             return httpx.Proxy(value)
         except Exception as e:  # noqa: BLE001
@@ -99,7 +99,8 @@ def install(url: httpx.URL, proxy: httpx.Proxy | None):
     try:
         _download(url, _runner.DEFAULT_STORAGE_DIRECTORY, proxy)
     except Exception as e:
-        raise click.ClickException(f'Failed to download and extract SDCcc from {url}: {e}.') from e
+        msg = f'Failed to download and extract SDCcc from {url}: {e}.'
+        raise click.ClickException(msg) from e
 
 
 @click.command(short_help='Uninstall the SDCcc executable by removing the directory.')
