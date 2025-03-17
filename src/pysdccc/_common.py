@@ -5,7 +5,7 @@ import sys
 import typing
 from collections.abc import Iterable
 
-PATH_TYPE = typing.Union[str, os.PathLike[str]]  # noqa: UP007
+PATH_TYPE = str | os.PathLike[str]
 
 ENCODING = 'utf-8' if sys.flags.utf8_mode else locale.getencoding()
 
