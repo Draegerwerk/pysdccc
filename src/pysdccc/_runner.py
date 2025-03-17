@@ -211,7 +211,7 @@ class _BaseRunner:
         *args: str,
         config: pathlib.Path,
         requirements: pathlib.Path,
-        **kwargs: typing.Any,
+        **kwargs: _common.CMD_TYPE,
     ) -> list[str]:
         if not config.is_absolute():
             msg = 'Path to config file must be absolute'
@@ -239,7 +239,7 @@ class SdcccRunner(_BaseRunner):
         config: _common.PATH_TYPE,
         requirements: _common.PATH_TYPE,
         timeout: float | None = None,
-        **kwargs: typing.Any,
+        **kwargs: _common.CMD_TYPE,
     ) -> tuple[int, TestSuite | None, TestSuite | None]:
         """Run the SDCcc executable using the specified configuration and requirements.
 
@@ -313,7 +313,7 @@ class SdcccRunnerAsync(_BaseRunner):
         requirements: _common.PATH_TYPE,
         timeout: float | None = None,  # noqa: ASYNC109
         loop: asyncio.AbstractEventLoop | None = None,
-        **kwargs: typing.Any,
+        **kwargs: _common.CMD_TYPE,
     ) -> tuple[int, TestSuite | None, TestSuite | None]:
         """Run the SDCcc executable using the specified configuration and requirements.
 
