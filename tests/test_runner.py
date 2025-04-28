@@ -1,6 +1,5 @@
 """tests for module runner.py."""
 
-import asyncio
 import pathlib
 import subprocess
 import tomllib
@@ -358,24 +357,26 @@ async def test_sdccc_runner_version_async():
     """Test that the SdcccRunner correctly loads the version."""
     runner = SdcccRunnerAsync(pathlib.Path().absolute(), pathlib.Path(__file__).absolute())
     version = uuid.uuid4().hex
-    fut = asyncio.Future()
-    with mock.patch('asyncio.create_subprocess_exec') as mock_process:
-        mock_process.return_value.returncode = 0
-        mock_process.return_value.communicate = lambda: fut
-        fut.set_result((version.encode(), b''))
+    with mock.patch('anyio.run_process') as mock_process:
+        completed_process_mock = mock.MagicMock()
+        completed_process_mock.stdout = version.encode()
+        mock_process.return_value = completed_process_mock
         assert await runner.get_version() == version
 
     # test exception handling
-    fut = asyncio.Future()
     returncode = int(uuid.uuid4())
     stdout = uuid.uuid4().hex.encode()
     stderr = uuid.uuid4().hex.encode()
-    with mock.patch('asyncio.create_subprocess_exec') as mock_process:
-        mock_process.return_value.returncode = returncode
-        mock_process.return_value.communicate = lambda: fut
-        fut.set_result((stdout, stderr))
-        with pytest.raises(subprocess.CalledProcessError) as e:
-            assert await runner.get_version() == ''
+
+    def _side_effect(*_, **__):  # noqa: ANN002, ANN003
+        raise subprocess.CalledProcessError(returncode=returncode, cmd='', output=stdout, stderr=stderr)
+
+    with (
+        mock.patch('anyio.run_process', side_effect=_side_effect) as mock_process,
+        pytest.raises(subprocess.CalledProcessError) as e,
+    ):
+        assert await runner.get_version() == ''
     assert e.value.returncode == returncode
     assert e.value.stdout == stdout
     assert e.value.stderr == stderr
+    mock_process.assert_called_with([runner.exe, '--version'], check=True, cwd=runner.exe.parent)

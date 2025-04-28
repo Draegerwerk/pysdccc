@@ -223,6 +223,7 @@ wheels = [
 name = "pysdccc"
 source = { editable = "." }
 dependencies = [
+    { name = "anyio" },
     { name = "httpx" },
     { name = "junitparser" },
 ]
@@ -249,6 +250,7 @@ test = [
 
 [package.metadata]
 requires-dist = [
+    { name = "anyio", specifier = ">=4.7.0" },
     { name = "click", marker = "extra == 'cli'", specifier = ">=8.0" },
     { name = "httpx", specifier = ">=0.28.0" },
     { name = "junitparser", specifier = ">=3.1.2" },

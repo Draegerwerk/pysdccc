@@ -8,7 +8,7 @@ import zipfile
 
 import httpx
 
-from pysdccc import _runner
+from pysdccc import _download, _runner
 
 try:
     import click
@@ -43,26 +43,21 @@ class ProxyType(click.ParamType):
 PROXY = ProxyType()
 
 
-def _download_to_stream(
-    url: httpx.URL,
-    stream: io.IOBase,
-    proxy: httpx.Proxy | None = None,
-) -> None:
-    with httpx.stream('GET', url, follow_redirects=True, proxy=proxy) as response:
-        total = int(response.headers['Content-Length'])
-        with click.progressbar(length=total, label='Downloading', show_eta=True, width=0) as progress:
+def _download_to_stream(url: httpx.URL, stream: io.IOBase, proxy: httpx.Proxy | None = None) -> None:
+    with _download.open_download_stream(url, proxy) as response:
+        total = response.headers.get('Content-Length')
+        with click.progressbar(
+                response.iter_bytes(),
+            length=int(total) if total is not None else None, label='Downloading', show_eta=True, width=0
+        ) as progress:
             num_bytes_downloaded = response.num_bytes_downloaded
-            for chunk in response.iter_bytes():
+            for chunk in progress:
                 stream.write(chunk)
                 progress.update(response.num_bytes_downloaded - num_bytes_downloaded)
                 num_bytes_downloaded = response.num_bytes_downloaded
 
 
-def _download(
-    url: httpx.URL,
-    output: pathlib.Path,
-    proxy: httpx.Proxy | None = None,
-):
+def download(url: httpx.URL, output: pathlib.Path, proxy: httpx.Proxy | None = None):
     click.echo(f'Downloading sdccc from {url}.')
     with tempfile.NamedTemporaryFile('wb', suffix='.zip', delete=False) as temporary_file:
         _download_to_stream(url, temporary_file, proxy=proxy)  # type: ignore[arg-type]
@@ -86,18 +81,21 @@ def cli():
 )
 @click.argument('url', type=URL)
 @click.option('--proxy', help='Proxy server to use for the download.', type=PROXY)
-def install(url: httpx.URL, proxy: httpx.Proxy | None):
+@click.pass_context
+def install(ctx: click.Context, url: httpx.URL, proxy: httpx.Proxy | None):
     """Download the specified version from the default URL to a temporary directory.
 
     This function downloads the SDCcc executable from the given URL to a temporary directory.
     It optionally uses a proxy and a specified timeout for the download operation.
     The downloaded file is extracted to a local path determined by the version string in the URL.
 
+    :param ctx: context from click
     :param url: The parsed URL from which to download the executable.
     :param proxy: Optional proxy to be used for the download.
     """
+    ctx.invoke(uninstall)
     try:
-        _download(url, _runner.DEFAULT_STORAGE_DIRECTORY, proxy)
+        download(url, _runner.DEFAULT_STORAGE_DIRECTORY, proxy)
     except Exception as e:
         msg = f'Failed to download and extract SDCcc from {url}: {e}.'
         raise click.ClickException(msg) from e

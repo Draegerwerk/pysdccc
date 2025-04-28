@@ -51,6 +51,7 @@ def main():
         print(f"{test_case.name}: {test_case.is_passed}")
 ```
 If you look for an async version
+
 ```python
 import pathlib
 
@@ -58,17 +59,18 @@ import pysdccc
 
 
 async def main():
-    if not await pysdccc.is_downloaded_async("my-specific-version"):
-        await pysdccc.download_async("https://url/to/sdccc.zip")
+    if not await pysdccc.ais_downloaded("my-specific-version"):
+        await pysdccc.adownload("https://url/to/sdccc.zip")
 
     runner = pysdccc.SdcccRunnerAsync(
         pathlib.Path("/path/to/sdccc/result/directory"),
     )
 
     try:
-        return_code, direct_result, invariant_result = await runner.run(  # https://github.com/Draegerwerk/SDCcc/?tab=readme-ov-file#exit-codes
+        return_code, direct_result, invariant_result = await runner.run(
+            # https://github.com/Draegerwerk/SDCcc/?tab=readme-ov-file#exit-codes
             config=pathlib.Path("/path/to/configuration/file.toml"),
-            requirements = pathlib.Path("/path/to/requirements/file.toml"),
+            requirements=pathlib.Path("/path/to/requirements/file.toml"),
         )
     except TimeoutError:
         print("Timeout occurred")
@@ -79,7 +81,7 @@ async def main():
 
 ### Download an sdccc executable
 
-Check out `pysdccc.download` or `pysdccc.download_async`. Otherwise, if `pysdccc[cli]` is installed, `$ pysdccc download https://url/to/sdccc.zip` can also be used.
+Check out `pysdccc.download` or `pysdccc.download_async`. Otherwise, if `pysdccc[cli]` is installed, `$ pysdccc install https://url/to/sdccc.zip` can also be used.
 
 ### Create configuration file
 
@@ -87,7 +89,7 @@ Configure the test consumer. Check the [test consumer configuration](https://git
 
 ```python
 import pathlib
-import toml
+import toml  # has to be installed by the user
 import pysdccc
 
 config = {
@@ -119,7 +121,7 @@ Enable or disable specific requirements. Check the [test requirements](https://g
 
 ```python
 import pathlib
-import toml
+import toml  # has to be installed by the user
 import pysdccc
 
 requirements = {
@@ -152,7 +154,7 @@ Some tests require individual parameters. Check the [test parameter configuratio
 
 ```python
 import pathlib
-import toml
+import toml  # has to be installed by the user
 import pysdccc
 
 config = {
@@ -181,13 +183,6 @@ requirements['TestParameter']['Biceps547TimeInterval'] = 10
 ### Execute sdccc from cli
 
 There exists a cli wrapper for the sdccc executable. If `pysdccc[cli]` is installed, `$ sdccc` can be used to execute arbitrary sdccc commands, e.g. `sdccc --version`. More information can be found [here](https://github.com/draegerwerk/sdccc?tab=readme-ov-file#running-sdccc).
-
-### Logging
-
-A logger is available to log the output of the test suite `logging.getLogger('pysdccc')`.
-Please note that each line of the test suite output is logged as a separate log message.
-Stdout is logged as info and stderr as error.
-> When using the `pysdccc.SdcccRunner` the output of the sdccc process is captured by the logger.
 
 ## Notices
 

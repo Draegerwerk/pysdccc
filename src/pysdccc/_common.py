@@ -2,7 +2,6 @@ import locale
 import os
 import pathlib
 import sys
-import typing
 from collections.abc import Iterable
 
 PATH_TYPE = str | os.PathLike[str]

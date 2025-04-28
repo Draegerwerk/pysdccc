@@ -46,12 +46,12 @@ Usage
     )
 """
 
-import asyncio
-import logging
 import pathlib
 import subprocess
 import tomllib
 import typing
+
+import anyio
 
 from pysdccc import _common
 from pysdccc._result_parser import TestSuite
@@ -75,7 +75,7 @@ def get_exe_path(local_path: pathlib.Path) -> pathlib.Path:
     """
     files = [f for f in local_path.glob('*.exe') if f.is_file()]
     if len(files) != 1:
-        msg = f'Unable to determine correct executable file, got {files} in path {local_path}'
+        msg = f'Expected a single executable file, got {files} in path {local_path}'
         raise FileNotFoundError(msg)
     return files[0]
 
@@ -280,39 +280,24 @@ class SdcccRunner(_BaseRunner):
         return process.stdout.decode(_common.ENCODING).strip()
 
 
-class _SdcccSubprocessProtocol(asyncio.SubprocessProtocol):
-    _STDOUT = 1
-    _STDERR = 2
-
-    def __init__(self):
-        self.closed_event = asyncio.Event()
-        self.logger = logging.getLogger('pysdccc')
-
-    def pipe_data_received(self, fd: int, data: bytes):
-        if fd == self._STDOUT:
-            self.logger.info(data.decode(_common.ENCODING).rstrip())
-        elif fd == self._STDERR:
-            self.logger.error(data.decode(_common.ENCODING).rstrip())
-        else:
-            msg = f'Unexpected file descriptor {fd}'
-            raise RuntimeError(msg)
-
-    def connection_lost(self, exc: Exception | None):
-        self.closed_event.set()
-        if exc:
-            raise exc
-
-
 class SdcccRunnerAsync(_BaseRunner):
     """Asynchronous runner for sdccc."""
+
+    def __init__(self, test_run_dir: _common.PATH_TYPE, exe: _common.PATH_TYPE | None = None):
+        """Initialize the SdcccRunnerAsync object.
+
+        :param exe: The path to the SDCcc executable. Must be an absolute path.
+        :param test_run_dir: The path to the directory where the test run results are to be stored. Must be an absolute
+        path.
+        :raises ValueError: If the provided paths are not absolute.
+        """
+        super().__init__(test_run_dir=test_run_dir, exe=exe)
 
     async def run(
         self,
         *,
         config: _common.PATH_TYPE,
         requirements: _common.PATH_TYPE,
-        timeout: float | None = None,  # noqa: ASYNC109
-        loop: asyncio.AbstractEventLoop | None = None,
         **kwargs: _common.CMD_TYPE,
     ) -> tuple[int, TestSuite | None, TestSuite | None]:
         """Run the SDCcc executable using the specified configuration and requirements.
@@ -324,36 +309,18 @@ class SdcccRunnerAsync(_BaseRunner):
 
         :param config: The path to the configuration file. Must be an absolute path.
         :param requirements: The path to the requirements file. Must be an absolute path.
-        :param timeout: The timeout in seconds for the SDCcc process. If None, wait indefinitely.
-        :param loop: The event loop to run the SDCcc process in. If None, the current running loop is used.
         :param kwargs: Additional command line arguments to be passed to the SDCcc executable.
         :return: A tuple containing the returncode of the sdccc process, parsed direct and invariant test results as
         TestSuite objects.
         :raises ValueError: If the provided paths are not absolute.
         :raises TimeoutError: If the process is running longer than the timeout.
         """
-        args = self._prepare_command(config=pathlib.Path(config), requirements=pathlib.Path(requirements), **kwargs)
-        loop = loop or asyncio.get_running_loop()
-        transport, protocol = await loop.subprocess_exec(
-            _SdcccSubprocessProtocol,
-            self.exe,
-            *args,
-            stdin=None,
-            cwd=self.exe.parent,
-        )
+        command = self._prepare_command(config=pathlib.Path(config), requirements=pathlib.Path(requirements), **kwargs)
         try:
-            async with asyncio.timeout(timeout):
-                await protocol.closed_event.wait()
-        except TimeoutError:
-            transport.kill()
-            raise
-        finally:
-            transport.close()
-        await protocol.closed_event.wait()
-        return_code = transport.get_returncode()
-        if return_code is None:
-            msg = 'Process did not exit'
-            raise RuntimeError(msg)
+            return_code = (await anyio.run_process(command, check=True, cwd=self.exe.parent)).returncode
+        except subprocess.CalledProcessError as e:
+            return_code = e.returncode
+
         return (
             return_code,
             self._get_result(DIRECT_TEST_RESULT_FILE_NAME),
@@ -362,17 +329,5 @@ class SdcccRunnerAsync(_BaseRunner):
 
     async def get_version(self) -> str | None:
         """Get the version of the SDCcc executable."""
-        process = await asyncio.create_subprocess_exec(
-            self.exe,
-            '--version',
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-            cwd=self.exe.parent,
-        )
-        stdout, stderr = await process.communicate()
-        if process.returncode:
-            error = subprocess.CalledProcessError(process.returncode, f'{self.exe} --version')
-            error.stdout = stdout
-            error.stderr = stderr
-            raise error
-        return stdout.decode(_common.ENCODING).strip() if stdout else None
+        result = await anyio.run_process([self.exe, '--version'], check=True, cwd=self.exe.parent)
+        return result.stdout.decode(_common.ENCODING).strip() if result.stdout is not None else None
