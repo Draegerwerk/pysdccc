@@ -58,26 +58,6 @@ from pysdccc._result_parser import TestSuite
 
 DIRECT_TEST_RESULT_FILE_NAME = 'TEST-SDCcc_direct.xml'
 INVARIANT_TEST_RESULT_FILE_NAME = 'TEST-SDCcc_invariant.xml'
-DEFAULT_STORAGE_DIRECTORY = pathlib.Path(__file__).parent.joinpath('_sdccc')
-"""Default directory to store the downloaded sdccc versions."""
-
-
-def get_exe_path(local_path: pathlib.Path) -> pathlib.Path:
-    """Get the path to the SDCcc executable.
-
-    This function searches the specified local path for the SDCcc executable file. It expects exactly one executable
-    file matching the pattern "sdccc-*.exe" to be present in the directory. If no such file or more than one file is
-    found, a FileNotFoundError is raised.
-
-    :param local_path: The local path where the SDCcc executable is expected to be found.
-    :return: The path to the SDCcc executable file.
-    :raises FileNotFoundError: If no executable file or more than one executable file is found in the specified path.
-    """
-    files = [f for f in local_path.glob('*.exe') if f.is_file()]
-    if len(files) != 1:
-        msg = f'Expected a single executable file, got {files} in path {local_path}'
-        raise FileNotFoundError(msg)
-    return files[0]
 
 
 def _load_configuration(path: pathlib.Path) -> dict[str, typing.Any]:
@@ -101,10 +81,10 @@ def check_requirements(provided: dict[str, dict[str, bool]], available: dict[str
     :param provided: A dictionary of provided requirements to be verified. The keys are standard names, and the values
                      are dictionaries where the keys are requirement IDs and the values are booleans indicating whether
                      the requirement is enabled.
-    :param available: A dictionary of available requirements provided by sdccc. The keys are standard names, and the
+    :param available: A dictionary of available requirements provided by SDCcc. The keys are standard names, and the
                       values are dictionaries where the keys are requirement IDs and the values are booleans indicating
                       whether the requirement is enabled.
-    :raise KeyError: If a standard or requirement provided by the user is not found in the sdccc provided requirements.
+    :raise KeyError: If a standard or requirement provided by the user is not found in the SDCcc provided requirements.
     """
     for standard, requirements in provided.items():
         if standard not in available:
@@ -134,9 +114,13 @@ class _BaseRunner:
         :raises ValueError: If the provided paths are not absolute.
         """
         try:
-            self.exe = pathlib.Path(exe) if exe is not None else get_exe_path(DEFAULT_STORAGE_DIRECTORY).absolute()
+            self.exe = (
+                pathlib.Path(exe)
+                if exe is not None
+                else _common.get_exe_path(_common.DEFAULT_STORAGE_DIRECTORY).absolute()
+            )
         except FileNotFoundError as e:
-            msg = 'Have you downloaded sdccc?'
+            msg = 'Have you downloaded SDCcc?'
             raise FileNotFoundError(msg) from e
         if not self.exe.is_absolute():
             msg = 'Path to executable must be absolute'
@@ -231,7 +215,7 @@ class _BaseRunner:
 
 
 class SdcccRunner(_BaseRunner):
-    """Synchronous runner for sdccc."""
+    """Synchronous runner for SDCcc."""
 
     def run(
         self,
@@ -252,7 +236,7 @@ class SdcccRunner(_BaseRunner):
         :param requirements: The path to the requirements file. Must be an absolute path.
         :param timeout: The timeout in seconds for the SDCcc process. If None, wait indefinitely.
         :param kwargs: Additional command line arguments to be passed to the SDCcc executable.
-        :return: A tuple containing the returncode of the sdccc process, parsed direct and invariant test results as
+        :return: A tuple containing the returncode of the SDCcc process, parsed direct and invariant test results as
         TestSuite objects.
         :raises ValueError: If the provided paths are not absolute.
         :raises subprocess.TimeoutExpired: If the process is running longer than the timeout.
@@ -281,7 +265,7 @@ class SdcccRunner(_BaseRunner):
 
 
 class SdcccRunnerAsync(_BaseRunner):
-    """Asynchronous runner for sdccc."""
+    """Asynchronous runner for SDCcc."""
 
     def __init__(self, test_run_dir: _common.PATH_TYPE, exe: _common.PATH_TYPE | None = None):
         """Initialize the SdcccRunnerAsync object.
@@ -310,7 +294,7 @@ class SdcccRunnerAsync(_BaseRunner):
         :param config: The path to the configuration file. Must be an absolute path.
         :param requirements: The path to the requirements file. Must be an absolute path.
         :param kwargs: Additional command line arguments to be passed to the SDCcc executable.
-        :return: A tuple containing the returncode of the sdccc process, parsed direct and invariant test results as
+        :return: A tuple containing the returncode of the SDCcc process, parsed direct and invariant test results as
         TestSuite objects.
         :raises ValueError: If the provided paths are not absolute.
         :raises TimeoutError: If the process is running longer than the timeout.

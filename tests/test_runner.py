@@ -17,19 +17,7 @@ from pysdccc._runner import (
     _BaseRunner,
     _load_configuration,
     check_requirements,
-    get_exe_path,
 )
-
-
-def test_get_exe_path():
-    """Test that the executable path is correctly identified."""
-    assert not pathlib.Path('sdccc-1.0.0.exe').exists()
-    with mock.patch.object(pathlib, 'Path') as mock_path:
-        mock_path.glob = lambda _: [pathlib.Path('sdccc-1.0.0.exe')]
-        assert get_exe_path(mock_path) == pathlib.Path('sdccc-1.0.0.exe')
-
-    with pytest.raises(FileNotFoundError):
-        get_exe_path(pathlib.Path('sdccc-1.0.0.exe'))
 
 
 def test_load_configuration():
@@ -318,7 +306,9 @@ def test_parse_result():
         ),
         ('SDCccTestRunValidity', 'SDCcc Test Run Validity'),
     )
-    run = _BaseRunner(pathlib.Path(__file__).parent.joinpath('result').absolute(), pathlib.Path(__file__).absolute())
+    run = _BaseRunner(
+        pathlib.Path(__file__).parent.joinpath('sdccc_example_results').absolute(), pathlib.Path(__file__).absolute()
+    )
     direct_results = run._get_result(DIRECT_TEST_RESULT_FILE_NAME)  # noqa: SLF001
     invariant_results = run._get_result(INVARIANT_TEST_RESULT_FILE_NAME)  # noqa: SLF001
 

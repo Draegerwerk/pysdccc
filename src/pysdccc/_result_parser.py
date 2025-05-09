@@ -1,6 +1,6 @@
-"""Parser for the JUnit XML test results provided by sdccc including custom elements.
+"""Parser for the JUnit XML test results provided by SDCcc including custom elements.
 
-This module provides classes to parse and handle JUnit XML test results with custom elements specific to sdccc.
+This module provides classes to parse and handle JUnit XML test results with custom elements specific to SDCcc.
 It includes custom elements for test identifiers and descriptions, as well as custom test case and test suite classes.
 
 Classes

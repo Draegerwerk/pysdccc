@@ -95,7 +95,9 @@ def test_result_file_parser():
         ),
         ('SDCccTestRunValidity', 'SDCcc Test Run Validity'),
     )
-    suite = TestSuite.from_file(pathlib.Path(__file__).parent.joinpath('sdccc_result.xml'))
+    suite = TestSuite.from_file(
+        pathlib.Path(__file__).parent.joinpath('sdccc_example_results').joinpath('sdccc_result.xml')
+    )
     assert isinstance(suite, TestSuite)
     assert len(data) == len(suite)
     for test_case, (identifier, description) in zip(suite, data, strict=True):

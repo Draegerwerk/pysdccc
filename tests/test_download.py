@@ -1,9 +1,7 @@
 """Provides functions for downloading and verifying the presence of the SDCcc executable."""
 
-import io
 import pathlib
 import uuid
-from collections.abc import AsyncIterator
 from unittest import mock
 
 import httpx
@@ -28,7 +26,6 @@ def test_download():
     ):
         mock_get_exe_path.return_value = exe_path
         assert download(url) == exe_path
-
 
 
 @pytest.mark.asyncio
@@ -62,7 +59,7 @@ def test_is_downloaded():
 @pytest.mark.asyncio
 async def test_is_downloaded_async():
     """Test that the download status is correctly determined."""
-    assert not (await ais_downloaded(uuid.uuid4().hex))
+    assert not await ais_downloaded(uuid.uuid4().hex)
     with mock.patch('pysdccc._runner.SdcccRunnerAsync') as mock_runner:
         version = uuid.uuid4().hex
 
