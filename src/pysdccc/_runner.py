@@ -60,17 +60,6 @@ DIRECT_TEST_RESULT_FILE_NAME = 'TEST-SDCcc_direct.xml'
 INVARIANT_TEST_RESULT_FILE_NAME = 'TEST-SDCcc_invariant.xml'
 
 
-def _load_configuration(path: pathlib.Path) -> dict[str, typing.Any]:
-    """Load the configuration from the specified file.
-
-    This function reads a TOML configuration file from the given local path and returns its contents as a dictionary.
-
-    :param path: The path to the directory containing the configuration file.
-    :return: A dictionary containing the configuration data.
-    """
-    return dict(tomllib.loads(path.read_text()))
-
-
 def check_requirements(provided: dict[str, dict[str, bool]], available: dict[str, dict[str, bool]]) -> None:
     """Check if the provided requirements are supported by the available requirements.
 
@@ -143,7 +132,7 @@ class _BaseRunner:
 
         :return: A dictionary containing the configuration data.
         """
-        return _load_configuration(self.exe.parent.joinpath('configuration').joinpath('config.toml'))
+        return dict(tomllib.loads(self.exe.parent.joinpath('configuration').joinpath('config.toml').read_text()))
 
     def get_requirements(self) -> dict[str, dict[str, bool]]:
         """Get the default requirements.
@@ -152,7 +141,9 @@ class _BaseRunner:
 
         :return: A dictionary containing the requirements data.
         """
-        return _load_configuration(self.exe.parent.joinpath('configuration').joinpath('test_configuration.toml'))
+        return dict(
+            tomllib.loads(self.exe.parent.joinpath('configuration').joinpath('test_configuration.toml').read_text())
+        )
 
     def get_test_parameter(self) -> dict[str, typing.Any]:
         """Get the default test parameter.
@@ -161,7 +152,9 @@ class _BaseRunner:
 
         :return: A dictionary containing the test parameter data.
         """
-        return _load_configuration(self.exe.parent.joinpath('configuration').joinpath('test_parameter.toml'))
+        return dict(
+            tomllib.loads(self.exe.parent.joinpath('configuration').joinpath('test_parameter.toml').read_text())
+        )
 
     def check_requirements(self, path: pathlib.Path) -> None:
         """Check the requirements from the given file against the requirements provided by the SDCcc version.

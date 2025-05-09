@@ -15,16 +15,8 @@ from pysdccc._runner import (
     SdcccRunner,
     SdcccRunnerAsync,
     _BaseRunner,
-    _load_configuration,
     check_requirements,
 )
-
-
-def test_load_configuration():
-    """Test that the configuration is correctly loaded from a TOML file."""
-    with mock.patch('pathlib.Path.read_text'), mock.patch('tomllib.loads') as mock_load:
-        mock_load.return_value = {'key': 'value'}
-        assert _load_configuration(pathlib.Path('config.toml')) == {'key': 'value'}
 
 
 def test_check_requirements():
