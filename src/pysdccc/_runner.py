@@ -48,6 +48,7 @@ Usage
 
 import pathlib
 import subprocess
+import sys
 import tomllib
 import typing
 
@@ -112,17 +113,17 @@ class _BaseRunner:
             msg = 'Have you downloaded SDCcc?'
             raise FileNotFoundError(msg) from e
         if not self.exe.is_absolute():
-            msg = 'Path to executable must be absolute'
+            msg = f'Path to executable must be absolute but is {self.exe}'
             raise ValueError(msg)
         if not self.exe.is_file():
             msg = f'No executable found under {self.exe}'
             raise FileNotFoundError(msg)
         self.test_run_dir = pathlib.Path(test_run_dir)
         if not self.test_run_dir.is_absolute():
-            msg = 'Path to test run directory must be absolute'
+            msg = f'Path to test run directory must be absolute but is {self.test_run_dir}'
             raise ValueError(msg)
         if not self.test_run_dir.is_dir():
-            msg = 'Test run directory is not a directory'
+            msg = f'Test run directory "{self.test_run_dir}" is not a directory or does not exist'
             raise ValueError(msg)
 
     def get_config(self) -> dict[str, typing.Any]:
@@ -292,9 +293,13 @@ class SdcccRunnerAsync(_BaseRunner):
         :raises ValueError: If the provided paths are not absolute.
         :raises TimeoutError: If the process is running longer than the timeout.
         """
-        command = self._prepare_command(config=pathlib.Path(config), requirements=pathlib.Path(requirements), **kwargs)
+        command = self._prepare_command(
+            str(self.exe), config=pathlib.Path(config), requirements=pathlib.Path(requirements), **kwargs
+        )
         try:
-            return_code = (await anyio.run_process(command, check=True, cwd=self.exe.parent)).returncode
+            return_code = (
+                await anyio.run_process(command, check=True, cwd=self.exe.parent, stdout=sys.stdout, stderr=sys.stderr)
+            ).returncode
         except subprocess.CalledProcessError as e:
             return_code = e.returncode
 

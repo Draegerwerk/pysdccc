@@ -22,7 +22,7 @@ def test_download():
     with (
         mock.patch('pysdccc._download.open_download_stream'),
         mock.patch('zipfile.ZipFile'),
-        mock.patch('pysdccc._runner.get_exe_path') as mock_get_exe_path,
+        mock.patch('pysdccc._common.get_exe_path') as mock_get_exe_path,
     ):
         mock_get_exe_path.return_value = exe_path
         assert download(url) == exe_path
@@ -36,7 +36,7 @@ async def test_download_async():
     with (
         mock.patch('pysdccc._download.aopen_download_stream') as mock_response,
         mock.patch('zipfile.ZipFile'),
-        mock.patch('pysdccc._runner.get_exe_path') as mock_get_exe_path,
+        mock.patch('pysdccc._common.get_exe_path') as mock_get_exe_path,
     ):
         response_mock = mock.AsyncMock()
         response_mock.aiter_bytes = mock.MagicMock()

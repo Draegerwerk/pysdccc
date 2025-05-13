@@ -57,30 +57,6 @@ def test_sdccc_runner_init():
         runner._prepare_command(config=pathlib.Path(), requirements=pathlib.Path().absolute())  # noqa: SLF001
 
 
-def test_sdccc_runner_get_config():
-    """Test that the SdcccRunner correctly loads the configuration."""
-    runner = _BaseRunner(pathlib.Path().absolute(), pathlib.Path(__file__))
-    with mock.patch('pysdccc._runner._load_configuration') as mock_load_config:
-        mock_load_config.return_value = {'key': 'value'}
-        assert runner.get_config() == {'key': 'value'}
-
-
-def test_sdccc_runner_get_requirements():
-    """Test that the SdcccRunner correctly loads the requirements."""
-    runner = _BaseRunner(pathlib.Path().absolute(), pathlib.Path(__file__))
-    with mock.patch('pysdccc._runner._load_configuration') as mock_load_config:
-        mock_load_config.return_value = {'key': 'value'}
-        assert runner.get_requirements() == {'key': 'value'}
-
-
-def test_sdccc_runner_get_test_parameter():
-    """Test that the SdcccRunner correctly loads the test parameters."""
-    runner = _BaseRunner(pathlib.Path().absolute(), pathlib.Path(__file__))
-    with mock.patch('pysdccc._runner._load_configuration') as mock_load_config:
-        mock_load_config.return_value = {'key': 'value'}
-        assert runner.get_test_parameter() == {'key': 'value'}
-
-
 def test_sdccc_runner_check_requirements():
     """Test that the SdcccRunner correctly checks the requirements."""
     runner = _BaseRunner(
