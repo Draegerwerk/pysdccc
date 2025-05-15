@@ -2,7 +2,7 @@
 
 This python packages provides a convenient way to execute the [SDCcc test suite](https://github.com/Draegerwerk/sdccc/).
 
-This wrapper is only compatible with sdccc versions later than [internal-baseline-001](https://github.com/Draegerwerk/SDCcc/releases/tag/internal-baseline-001).
+This wrapper is only compatible with SDCcc versions later than [internal-baseline-001](https://github.com/Draegerwerk/SDCcc/releases/tag/internal-baseline-001).
 
 ## Installation
 
@@ -67,22 +67,18 @@ async def main():
         pathlib.Path("/path/to/sdccc/result/directory"),
     )
 
-    try:
-        return_code, direct_result, invariant_result = await runner.run(
-            # https://github.com/Draegerwerk/SDCcc/?tab=readme-ov-file#exit-codes
-            config=pathlib.Path("/path/to/configuration/file.toml"),
-            requirements=pathlib.Path("/path/to/requirements/file.toml"),
-        )
-    except TimeoutError:
-        print("Timeout occurred")
-        return
+    # https://github.com/Draegerwerk/SDCcc/?tab=readme-ov-file#exit-codes
+    return_code, direct_result, invariant_result = await runner.run(
+        config=pathlib.Path("/path/to/configuration/file.toml"),
+        requirements=pathlib.Path("/path/to/requirements/file.toml"),
+    )
 
     # checkout example from above ...
 ```
 
-### Download an sdccc executable
+### Download an SDCcc executable
 
-Check out `pysdccc.download` or `pysdccc.download_async`. If the command line interface of `pysdccc` is installed, the zipped source of SDCcc can be installed using this command: `pysdccc install https://url/to/sdccc.zip`
+Check out `pysdccc.download` or `pysdccc.adownload`. If the command line interface of `pysdccc` is installed, the zipped source of SDCcc can be installed using this command: `pysdccc install https://url/to/sdccc.zip`
 
 ### Create configuration file
 
@@ -112,7 +108,7 @@ runner.run(
     requirements=pathlib.Path('/path/to/requirements/file.toml'),
 )
 
-# or if you have already downloaded the version
+# or if you have already downloaded SDCcc
 config = runner.get_config()  # load default configuration
 config['SDCcc']['Consumer']['DeviceEpr'] = "urn:uuid:12345678-1234-1234-1234-123456789012"  # e.g. change device epr
 # save and run as above
@@ -135,7 +131,7 @@ requirements = {
         ...  # add all requirements to be tested
     }
 }
-requirements_path = pathlib.Path('/path/to/configuration/file.toml')
+requirements_path = pathlib.Path('/path/to/requirement/file.toml')
 requirements_path.write_text(toml.dumps(requirements))
 
 runner = pysdccc.SdcccRunner(
@@ -148,7 +144,7 @@ runner.run(
     requirements=requirements_path,
 )
 
-# or, if you have already downloaded the version
+# or, if you have already downloaded SDCcc
 requirements = runner.get_requirements()  # load default configuration
 requirements['BICEPS']['R0033'] = False  # e.g. disable biceps R0033
 # save and run as above
@@ -170,19 +166,19 @@ testparameter_config = {
         ...
     }
 }
-requirements_path = pathlib.Path('/path/to/configuration/file.toml')
-requirements_path.write_text(toml.dumps(testparameter_config))
+testparameter_config_path = pathlib.Path('/path/to/test_parameter/file.toml')
+testparameter_config_path.write_text(toml.dumps(testparameter_config))
 
 runner = pysdccc.SdcccRunner(
     pathlib.Path('/path/to/sdccc/result/directory'),
 )
 runner.run(
     config=pathlib.Path('/path/to/configuration/file.toml'),
-    requirements=requirements_path,
-    testparam=testparameter_config,
+    requirements=pathlib.Path('/path/to/requirements/file.toml'),
+    testparam=testparameter_config_path,
 )
 
-# or, if you have already downloaded the version
+# or, if you have already downloaded SDCcc
 testparameter_config = runner.get_test_parameter()  # load default configuration
 testparameter_config['TestParameter']['Biceps547TimeInterval'] = 10
 # save and run as above
@@ -190,7 +186,7 @@ testparameter_config['TestParameter']['Biceps547TimeInterval'] = 10
 
 ### Execute SDCcc from command-line interface (cli)
 
-There exists a cli wrapper for the sdccc executable. If `pysdccc[cli]` is installed, `sdccc` can be used to execute arbitrary sdccc commands, e.g. `sdccc --version`. More information can be found [here](https://github.com/draegerwerk/sdccc?tab=readme-ov-file#running-sdccc).
+There exists a cli wrapper for the SDCcc executable. If `pysdccc[cli]` is installed, `sdccc` can be used to execute arbitrary SDCcc commands, e.g. `sdccc --version`. More information can be found [here](https://github.com/draegerwerk/sdccc?tab=readme-ov-file#running-sdccc).
 
 ## Notices
 
