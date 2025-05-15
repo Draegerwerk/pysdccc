@@ -113,7 +113,7 @@ jobs:
           --html=pytest_reports/unittest_report_${{ matrix.os }}_py${{ matrix.python-version }}_${{ env.SUFFIX }}.html
           --self-contained-html
           --log-file pytest_${{ matrix.os }}_py${{ matrix.python-version }}_${{ env.SUFFIX }}.log
-          --cov --cov-branch --cov-report=xml
+          --cov=src --cov-branch --cov-report=xml
 
       - name: Archive test result
         uses: actions/upload-artifact@v4
