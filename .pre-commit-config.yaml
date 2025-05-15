@@ -8,7 +8,7 @@ repos:
     rev: v1.35.1
     hooks:
       - id: yamllint
-        args: ['-d {extends: relaxed, rules: {line-length: disable, new-lines: { type: dos }}}', '-s']
+        args: ['-d {extends: relaxed, rules: {line-length: disable, new-lines: { type: platform }}}', '-s']
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
@@ -18,7 +18,6 @@ repos:
       - id: debug-statements
       - id: end-of-file-fixer
       - id: mixed-line-ending
-        args: [ "--fix=crlf" ]
       - id: trailing-whitespace
       - id: check-executables-have-shebangs
       - id: check-illegal-windows-names
