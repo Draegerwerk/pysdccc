@@ -133,7 +133,7 @@ class _BaseRunner:
 
         :return: A dictionary containing the configuration data.
         """
-        return dict(tomllib.loads(self.exe.parent.joinpath('configuration').joinpath('config.toml').read_text()))
+        return tomllib.loads(self.exe.parent.joinpath('configuration').joinpath('config.toml').read_text())
 
     def get_requirements(self) -> dict[str, dict[str, bool]]:
         """Get the default requirements.
@@ -142,9 +142,7 @@ class _BaseRunner:
 
         :return: A dictionary containing the requirements data.
         """
-        return dict(
-            tomllib.loads(self.exe.parent.joinpath('configuration').joinpath('test_configuration.toml').read_text())
-        )
+        return tomllib.loads(self.exe.parent.joinpath('configuration').joinpath('test_configuration.toml').read_text())
 
     def get_test_parameter(self) -> dict[str, typing.Any]:
         """Get the default test parameter.
@@ -153,9 +151,7 @@ class _BaseRunner:
 
         :return: A dictionary containing the test parameter data.
         """
-        return dict(
-            tomllib.loads(self.exe.parent.joinpath('configuration').joinpath('test_parameter.toml').read_text())
-        )
+        return tomllib.loads(self.exe.parent.joinpath('configuration').joinpath('test_parameter.toml').read_text())
 
     def check_requirements(self, path: pathlib.Path) -> None:
         """Check the requirements from the given file against the requirements provided by the SDCcc version.
