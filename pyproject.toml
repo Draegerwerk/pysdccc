@@ -22,7 +22,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 readme = "README.md"
-license = {file = "LICENSE"}
+license = { file = "LICENSE" }
 keywords = ["sdc", "SDCcc", "test", "wrapper"]
 
 [project.urls]
@@ -125,3 +125,6 @@ commands = [["pre-commit", "run", "--all-files"]]
 depends = []
 allowlist_externals = ["pre-commit"]
 package = "skip"
+
+[tool.coverage.run]
+parallel = true # https://coverage.readthedocs.io/en/latest/config.html#run-parallel
