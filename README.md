@@ -49,7 +49,7 @@ def main():
         return
 
     for test_case in direct_result + invariant_result:
-        print(f"{test_case.name}: {test_case.is_passed}")
+        print(f"{test_case.test_identifier}: {test_case.is_passed}")
 ```
 If you look for an async version
 
