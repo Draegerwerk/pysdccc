@@ -11,7 +11,7 @@ authors = [
 description = "Python wrapper for SDCcc test tool"
 requires-python = ">=3.11, <3.14"
 dependencies = [
-    "junitparser>=3.1.2",
+    "junitparser>=4",
     "httpx>=0.28.0",
     "anyio>=4.7.0",
 ]
@@ -37,10 +37,11 @@ test = [
     "pytest-html>=4",
     "pytest-asyncio>=0.24",
     "pytest-cov>=6.1.1",
+    "trio>=0.30.0",
 ]
 dev = [
     { include-group = "test" },
-    "pyright>=1.1.391",
+    "pyright>=1.1.403",
     "lxml-stubs>=0.5.1",
     "ruff>=0.9.6",
 ]
@@ -115,16 +116,17 @@ filterwarnings = [# https://docs.python.org/3/library/warnings.html#warning-filt
 env_list = ["pre-commit", "py311", "py312", "py313"]
 
 [tool.tox.env_run_base]
-depends = ["pre-commit"]
-package = "editable"
-commands = [["pytest"]]
-dependency_groups = ["test"]
+depends = ["pre-commit"] # https://tox.wiki/en/latest/config.html#depends
+runner = "uv-venv-lock-runner" # https://tox.wiki/en/latest/config.html#runner
+package = "wheel" # https://tox.wiki/en/latest/config.html#package
+commands = [["pytest"]] # https://tox.wiki/en/latest/config.html#commands
+dependency_groups = ["test"] # https://tox.wiki/en/latest/config.html#dependency_groups
 
 [tool.tox.env.pre-commit]
-commands = [["pre-commit", "run", "--all-files"]]
-depends = []
-allowlist_externals = ["pre-commit"]
-package = "skip"
+commands = [["pre-commit", "run", "--all-files"]] # https://tox.wiki/en/latest/config.html#commands
+depends = [] # https://tox.wiki/en/latest/config.html#depends
+allowlist_externals = ["pre-commit"] # https://tox.wiki/en/latest/config.html#allowlist_externals
+skip_install = true # https://tox.wiki/en/latest/config.html#skip_install
 
 [tool.coverage.run]
 parallel = true # https://coverage.readthedocs.io/en/latest/config.html#run-parallel

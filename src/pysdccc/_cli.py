@@ -3,6 +3,7 @@
 import contextlib
 import io
 import pathlib
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -10,7 +11,7 @@ import zipfile
 
 import httpx
 
-from pysdccc import _common, _download
+from pysdccc import _common
 
 try:
     import click
@@ -52,7 +53,8 @@ PROXY = ProxyType()
 
 
 def _download_to_stream(url: httpx.URL, stream: io.IOBase, proxy: httpx.Proxy | None = None) -> None:
-    with _download.open_download_stream(url, proxy) as response:
+    with httpx.stream('GET', url, follow_redirects=True, proxy=proxy) as response:
+        response.raise_for_status()
         total = response.headers.get('Content-Length')
         with click.progressbar(
             response.iter_bytes(),
@@ -119,8 +121,6 @@ def uninstall():
 
     This function removes the SDCcc executable from the directory.
     """
-    import shutil
-
     with contextlib.suppress(FileNotFoundError):
         shutil.rmtree(_common.DEFAULT_STORAGE_DIRECTORY)
 

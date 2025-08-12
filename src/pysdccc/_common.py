@@ -6,6 +6,8 @@ import pathlib
 import sys
 from collections.abc import Iterable
 
+import anyio
+
 DEFAULT_STORAGE_DIRECTORY = pathlib.Path(__file__).parent.joinpath('_sdccc')
 """Default directory to store the downloaded SDCcc versions."""
 
@@ -13,8 +15,8 @@ PATH_TYPE = str | os.PathLike[str]
 
 ENCODING = 'utf-8' if sys.flags.utf8_mode else locale.getencoding()
 
-SINGLE_CMD_TYPE = str | int | bool | pathlib.Path
-CMD_TYPE = SINGLE_CMD_TYPE | Iterable[str | int | pathlib.Path] | None
+SINGLE_CMD_TYPE = str | int | bool | pathlib.Path | anyio.Path
+CMD_TYPE = SINGLE_CMD_TYPE | Iterable[str | int | pathlib.Path | anyio.Path] | None
 
 
 def build_command(*args: str, **kwargs: CMD_TYPE) -> list[str]:
@@ -55,3 +57,30 @@ def get_exe_path(local_path: pathlib.Path) -> pathlib.Path:
         msg = f'Expected a single executable file, got {files} in path {local_path}'
         raise FileNotFoundError(msg)
     return files[0]
+
+
+def check_requirements(provided: dict[str, dict[str, bool]], available: dict[str, dict[str, bool]]) -> None:
+    """Check if the provided requirements are supported by the available requirements.
+
+    This function verifies that all the requirements specified in the `provided` dictionary are supported by the
+    requirements in the `available` dictionary. If any requirement in `provided` is not found in `available`, a KeyError
+    is raised.
+
+    :param provided: A dictionary of provided requirements to be verified. The keys are standard names, and the values
+                     are dictionaries where the keys are requirement IDs and the values are booleans indicating whether
+                     the requirement is enabled.
+    :param available: A dictionary of available requirements provided by SDCcc. The keys are standard names, and the
+                      values are dictionaries where the keys are requirement IDs and the values are booleans indicating
+                      whether the requirement is enabled.
+    :raise KeyError: If a standard or requirement provided by the user is not found in the SDCcc provided requirements.
+    """
+    for standard, requirements in provided.items():
+        if standard not in available:
+            msg = f'Unsupported standard "{standard}". Supported standards are "{list(available)}"'
+            raise KeyError(msg)
+        provided_enabled = [req for req, enabled in requirements.items() if enabled]
+        available_enabled = [a for a, enabled in available[standard].items() if enabled]
+        for req in provided_enabled:
+            if req not in available_enabled:
+                msg = f'Requirement id "{standard}.{req}" not found'
+                raise KeyError(msg)

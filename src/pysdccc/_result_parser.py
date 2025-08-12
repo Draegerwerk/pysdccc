@@ -31,10 +31,11 @@ Usage
         print(test_case.test_description)
 """
 
-import pathlib
-import typing
+from collections.abc import Iterator
 
 from junitparser import junitparser
+
+from pysdccc import _common
 
 
 class TestIdentifierElement(junitparser.Element):
@@ -108,12 +109,14 @@ class TestSuite(junitparser.TestSuite):
     It provides methods to iterate over the test cases and parse a test suite from a file.
     """
 
-    def __iter__(self) -> typing.Iterator[TestCase]:  # pyright: ignore [reportIncompatibleMethodOverride]
+    def __iter__(self) -> Iterator[TestCase]:
         for elem in super().__iter__():
-            yield TestCase.fromelem(elem)  # type: ignore[no-untyped-call]
+            test_case = TestCase.fromelem(elem)
+            if test_case is not None:
+                yield test_case
 
     @classmethod
-    def from_file(cls, file: pathlib.Path | str) -> 'TestSuite':
+    def from_file(cls, file: _common.PATH_TYPE) -> 'TestSuite':
         """Parse a test suite from a given file.
 
         This method reads a JUnit XML file and parses it into a `TestSuite` object containing custom elements.
@@ -123,8 +126,13 @@ class TestSuite(junitparser.TestSuite):
         :raises ValueError: If the parsed file does not contain a `TestSuite` object.
         :raises FileNotFoundError: If the file does not exist.
         """
-        suite = junitparser.JUnitXml.fromfile(str(file))
+        suite_xml = junitparser.JUnitXml.fromfile(str(file))
+        suite = next(iter(suite_xml), None)
         if not isinstance(suite, junitparser.TestSuite):
             msg = f'Expected class {junitparser.TestSuite}, got {type(suite)}'
             raise TypeError(msg)
-        return cls.fromelem(suite)  # type: ignore[no-untyped-call,no-any-return]
+        result = cls.fromelem(suite)
+        if result is None:
+            msg = f'Failed to parse TestSuite from {file}.'
+            raise ValueError(msg)
+        return result

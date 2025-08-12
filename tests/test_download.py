@@ -14,27 +14,25 @@ from pysdccc._download import (
     is_downloaded,
 )
 
+pytestmark = pytest.mark.anyio
 
-def test_download():
+
+@mock.patch('pysdccc._download.adownload')
+def test_download(mock_adownload: mock.AsyncMock):
     """Test that the download function correctly downloads and extracts the executable."""
-    url = httpx.URL(uuid.uuid4().hex)
+    url = uuid.uuid4().hex
     exe_path = pathlib.Path(uuid.uuid4().hex)
-    with (
-        mock.patch('pysdccc._download.open_download_stream'),
-        mock.patch('zipfile.ZipFile'),
-        mock.patch('pysdccc._common.get_exe_path') as mock_get_exe_path,
-    ):
-        mock_get_exe_path.return_value = exe_path
-        assert download(url) == exe_path
+    mock_adownload.return_value = exe_path
+    assert download(url).result() == exe_path
+    mock_adownload.assert_called_once_with(url, None, None)
 
 
-@pytest.mark.asyncio
 async def test_download_async():
     """Test that the download function correctly downloads and extracts the executable."""
     url = httpx.URL(uuid.uuid4().hex)
     exe_path = pathlib.Path(uuid.uuid4().hex)
     with (
-        mock.patch('pysdccc._download.aopen_download_stream') as mock_response,
+        mock.patch('pysdccc._download._open_download_stream') as mock_response,
         mock.patch('zipfile.ZipFile'),
         mock.patch('pysdccc._common.get_exe_path') as mock_get_exe_path,
     ):
@@ -47,24 +45,18 @@ async def test_download_async():
         assert await adownload(url) == exe_path
 
 
-def test_is_downloaded():
+@mock.patch('pysdccc._download.ais_downloaded', return_value=True)
+def test_is_downloaded(mock_ais_downloaded: mock.AsyncMock):
     """Test that the download status is correctly determined."""
-    assert not is_downloaded(uuid.uuid4().hex)
-    with mock.patch('pysdccc._runner.SdcccRunner') as mock_runner:
-        version = uuid.uuid4().hex
-        mock_runner.return_value.get_version.return_value = version
-        assert is_downloaded(version)
+    version = uuid.uuid4().hex
+    assert is_downloaded(version)
+    mock_ais_downloaded.assert_called_once_with(version)
 
 
-@pytest.mark.asyncio
 async def test_is_downloaded_async():
     """Test that the download status is correctly determined."""
     assert not await ais_downloaded(uuid.uuid4().hex)
-    with mock.patch('pysdccc._runner.SdcccRunnerAsync') as mock_runner:
+    with mock.patch('pysdccc._async_runner.SdcccRunnerAsync') as mock_runner:
         version = uuid.uuid4().hex
-
-        async def _get_version():  # noqa: ANN202
-            return version
-
-        mock_runner.return_value.get_version = _get_version
+        mock_runner.return_value.get_version = mock.AsyncMock(return_value=version)
         assert await ais_downloaded(version)

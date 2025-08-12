@@ -93,3 +93,26 @@ def test_get_exe_path():
 
     with pytest.raises(FileNotFoundError):
         _common.get_exe_path(expected_path)
+
+
+def test_check_requirements():
+    """Test that the requirements are correctly checked against the provided requirements."""
+    provided = {'biceps': {'b1': True}}
+    available = {'biceps': {'b1': True, 'b2': True}}
+    _common.check_requirements(provided, available)
+
+    provided['biceps']['b3'] = True
+    with pytest.raises(KeyError):
+        _common.check_requirements(provided, available)
+
+    provided['biceps']['b3'] = False
+    _common.check_requirements(provided, available)
+
+    provided['mdpws'] = {}
+    provided['mdpws']['m1'] = True
+    with pytest.raises(KeyError):
+        _common.check_requirements(provided, available)
+
+    provided['mdpws']['m1'] = False
+    with pytest.raises(KeyError):
+        _common.check_requirements(provided, available)

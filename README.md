@@ -184,6 +184,13 @@ testparameter_config['TestParameter']['Biceps547TimeInterval'] = 10
 # save and run as above
 ```
 
+### Logging
+
+The SDCcc runner provides a logger called `pysdccc.run` that can be used to log messages during the execution of the tests. Stdout is mapped to logging level `info` and stderr to `error`.
+Be aware that no further processing of the SDCcc process output is done. Depending on the format you use you may get duplicated timestamps, etc. Also, it might happen that a java error can stretch over multiple lines, which may result in multiple log messages in python for the same java error.
+
+```python
+
 ### Execute SDCcc from command-line interface (cli)
 
 There exists a cli wrapper for the SDCcc executable. If `pysdccc[cli]` is installed, `sdccc` can be used to execute arbitrary SDCcc commands, e.g. `sdccc --version`. More information can be found [here](https://github.com/draegerwerk/sdccc?tab=readme-ov-file#running-sdccc).

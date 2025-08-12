@@ -66,14 +66,16 @@ def test_test_suite_iter():
 @mock.patch('pysdccc._result_parser.junitparser.JUnitXml.fromfile')
 def test_test_suite_from_file(mock_fromfile: mock.MagicMock):
     """Test that the from_file method of TestSuite returns a TestSuite instance."""
-    mock_suite = JUnitTestSuite()
-    mock_fromfile.return_value = mock_suite
-    suite = TestSuite.from_file('dummy_path')
-    assert isinstance(suite, TestSuite)
-    assert suite == mock_suite
+    xml = JUnitXml()
+    suite = JUnitTestSuite()
+    xml.add_testsuite(suite)
+    mock_fromfile.return_value = xml
+    loaded_suite = TestSuite.from_file('dummy_path')
+    assert isinstance(loaded_suite, TestSuite)
+    assert loaded_suite == suite
 
     mock_fromfile.return_value = JUnitXml()
-    with pytest.raises(TypeError, match=f'Expected class {junitparser.TestSuite}, got {type(JUnitXml())}'):
+    with pytest.raises(TypeError, match=f'Expected class {junitparser.TestSuite}, got {type(None)}'):
         TestSuite.from_file('dummy_path')
 
 
