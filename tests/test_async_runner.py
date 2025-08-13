@@ -1,6 +1,7 @@
 """tests for async runner module."""
 
 import pathlib
+import re
 import subprocess
 import tomllib
 import uuid
@@ -49,7 +50,7 @@ async def test_sdccc_runner_init():
         SdcccRunnerAsync(pathlib.Path().absolute(), pathlib.Path().absolute())
     with pytest.raises(
         ValueError,
-        match=rf'Test run directory "{pathlib.Path(__file__).absolute()}" is not a directory or does not exist',
+        match=re.escape(f'Test run directory "{pathlib.Path(__file__).absolute()}" is not a directory or does not exist'),
     ):
         SdcccRunnerAsync(pathlib.Path(__file__).absolute(), pathlib.Path(__file__).absolute())
     runner = SdcccRunnerAsync(pathlib.Path().absolute(), pathlib.Path(__file__))
@@ -59,7 +60,7 @@ async def test_sdccc_runner_init():
         await runner._prepare_command(config=pathlib.Path().absolute(), requirements=pathlib.Path())  # noqa: SLF001
     with pytest.raises(ValueError, match='Path to config file must be absolute'):
         await runner._prepare_command(config=pathlib.Path(), requirements=pathlib.Path().absolute())  # noqa: SLF001
-    with pytest.raises(ValueError, match=f'{runner.test_run_dir} is not empty'):
+    with pytest.raises(ValueError, match=re.escape(f'{runner.test_run_dir} is not empty')):
         await runner._prepare_command(config=pathlib.Path().absolute(), requirements=pathlib.Path().absolute())  # noqa: SLF001
 
 
