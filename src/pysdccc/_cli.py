@@ -127,7 +127,7 @@ def uninstall():
 
 def sdccc():
     try:
-        sdccc_exe = _common.get_exe_path(_common.DEFAULT_STORAGE_DIRECTORY)
+        sdccc_exe = pathlib.Path(_common.get_exe_path(_common.DEFAULT_STORAGE_DIRECTORY))
         subprocess.run(  # noqa: S603
             [sdccc_exe, *sys.argv[1:]],
             check=True,

@@ -38,7 +38,7 @@ class SdcccRunnerAsync:
             self._exe = (
                 pathlib.Path(exe)
                 if exe is not None
-                else _common.get_exe_path(_common.DEFAULT_STORAGE_DIRECTORY).absolute()
+                else pathlib.Path(_common.get_exe_path(_common.DEFAULT_STORAGE_DIRECTORY)).absolute()
             )
         except FileNotFoundError as e:
             msg = 'Have you downloaded SDCcc?'
@@ -123,13 +123,13 @@ class SdcccRunnerAsync:
         test_result_dir = self.test_run_dir.joinpath(file_name)
         if not await test_result_dir.exists():
             return None
-        return TestSuite.from_file(test_result_dir)
+        return await TestSuite.from_file(test_result_dir)
 
     async def _prepare_command(
         self,
         *args: str,
-        config: pathlib.Path,
-        requirements: pathlib.Path,
+        config: anyio.Path,
+        requirements: anyio.Path,
         **kwargs: _common.CMD_TYPE,
     ) -> list[str]:
         if not config.is_absolute():
@@ -171,7 +171,7 @@ class SdcccRunnerAsync:
         """
         return_code = 1  # prevents possibly unbound variable
         command = await self._prepare_command(
-            str(self.exe), config=pathlib.Path(config), requirements=pathlib.Path(requirements), **kwargs
+            str(self.exe), config=anyio.Path(config), requirements=anyio.Path(requirements), **kwargs
         )
 
         async with (

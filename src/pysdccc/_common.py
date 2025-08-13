@@ -4,7 +4,7 @@ import locale
 import os
 import pathlib
 import sys
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 
 import anyio
 
@@ -41,7 +41,7 @@ def build_command(*args: str, **kwargs: CMD_TYPE) -> list[str]:
     return command
 
 
-def get_exe_path(local_path: pathlib.Path) -> pathlib.Path:
+def get_exe_path(local_path: PATH_TYPE) -> os.PathLike[str]:
     """Get the path to the SDCcc executable.
 
     This function searches the specified local path for the SDCcc executable file. It expects exactly one executable
@@ -52,14 +52,14 @@ def get_exe_path(local_path: pathlib.Path) -> pathlib.Path:
     :return: The path to the SDCcc executable file.
     :raises FileNotFoundError: If no executable file or more than one executable file is found in the specified path.
     """
-    files = [f for f in local_path.glob('*.exe') if f.is_file()]
+    files = [f for f in pathlib.Path(local_path).glob('*.exe') if f.is_file()]
     if len(files) != 1:
         msg = f'Expected a single executable file, got {files} in path {local_path}'
         raise FileNotFoundError(msg)
     return files[0]
 
 
-def check_requirements(provided: dict[str, dict[str, bool]], available: dict[str, dict[str, bool]]) -> None:
+def check_requirements(provided: Mapping[str, Mapping[str, bool]], available: Mapping[str, Mapping[str, bool]]) -> None:
     """Check if the provided requirements are supported by the available requirements.
 
     This function verifies that all the requirements specified in the `provided` dictionary are supported by the

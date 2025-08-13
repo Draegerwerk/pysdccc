@@ -56,14 +56,14 @@ async def test_sdccc_runner_init():
     ):
         SdcccRunnerAsync(pathlib.Path(__file__).absolute(), pathlib.Path(__file__).absolute())
     runner = SdcccRunnerAsync(pathlib.Path().absolute(), pathlib.Path(__file__))
-    assert runner.exe == pathlib.Path(__file__).absolute()
-    assert runner.test_run_dir == pathlib.Path().absolute()
+    assert runner.exe == await anyio.Path(__file__).absolute()
+    assert runner.test_run_dir == await anyio.Path().absolute()
     with pytest.raises(ValueError, match='Path to requirements file must be absolute'):
-        await runner._prepare_command(config=pathlib.Path().absolute(), requirements=pathlib.Path())  # noqa: SLF001
+        await runner._prepare_command(config=await anyio.Path().absolute(), requirements=anyio.Path())  # noqa: SLF001
     with pytest.raises(ValueError, match='Path to config file must be absolute'):
-        await runner._prepare_command(config=pathlib.Path(), requirements=pathlib.Path().absolute())  # noqa: SLF001
+        await runner._prepare_command(config=anyio.Path(), requirements=await anyio.Path().absolute())  # noqa: SLF001
     with pytest.raises(ValueError, match=re.escape(f'{runner.test_run_dir} is not empty')):
-        await runner._prepare_command(config=pathlib.Path().absolute(), requirements=pathlib.Path().absolute())  # noqa: SLF001
+        await runner._prepare_command(config=await anyio.Path().absolute(), requirements=await anyio.Path().absolute())  # noqa: SLF001
 
 
 @mock.patch('tomllib.loads')

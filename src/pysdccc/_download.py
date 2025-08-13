@@ -3,6 +3,7 @@
 import concurrent.futures
 import contextlib
 import logging
+import os
 import pathlib
 import subprocess
 import sys
@@ -37,8 +38,8 @@ async def _open_download_stream(
 async def download(
     url: httpx.URL | str,
     proxy: httpx.Proxy | None = None,
-    output: pathlib.Path | None = None,
-) -> pathlib.Path:
+    output: _common.PATH_TYPE | None = None,
+) -> os.PathLike[str]:
     """Download and extract the specified version from the URL.
 
     :param url: The parsed URL from which to download the executable.
@@ -79,8 +80,8 @@ async def is_downloaded(version: str) -> bool:
 def download_sync(
     url: httpx.URL | str,
     proxy: httpx.Proxy | None = None,
-    output: pathlib.Path | None = None,
-) -> concurrent.futures.Future[pathlib.Path]:
+    output: _common.PATH_TYPE | None = None,
+) -> concurrent.futures.Future[os.PathLike[str]]:
     """Download and extract the specified version from the URL.
 
     :param url: The parsed URL from which to download the executable.

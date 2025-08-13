@@ -33,6 +33,7 @@ Usage
 
 from collections.abc import Iterator
 
+import anyio.to_thread
 from junitparser import junitparser
 
 from pysdccc import _common
@@ -116,7 +117,7 @@ class TestSuite(junitparser.TestSuite):
                 yield test_case
 
     @classmethod
-    def from_file(cls, file: _common.PATH_TYPE) -> 'TestSuite':
+    async def from_file(cls, file: _common.PATH_TYPE) -> 'TestSuite':
         """Parse a test suite from a given file.
 
         This method reads a JUnit XML file and parses it into a `TestSuite` object containing custom elements.
@@ -126,7 +127,7 @@ class TestSuite(junitparser.TestSuite):
         :raises ValueError: If the parsed file does not contain a `TestSuite` object.
         :raises FileNotFoundError: If the file does not exist.
         """
-        suite_xml = junitparser.JUnitXml.fromfile(str(file))
+        suite_xml = await anyio.to_thread.run_sync(junitparser.JUnitXml.fromfile, str(file))
         suite = next(iter(suite_xml), None)
         if not isinstance(suite, junitparser.TestSuite):
             msg = f'Expected class {junitparser.TestSuite}, got {type(suite)}'
