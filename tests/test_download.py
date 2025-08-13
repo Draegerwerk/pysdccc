@@ -56,7 +56,7 @@ def test_is_downloaded_sync(mock_is_downloaded: mock.AsyncMock):
 async def test_is_downloaded():
     """Test that the download status is correctly determined."""
     assert not await is_downloaded(uuid.uuid4().hex)
-    with mock.patch('pysdccc._async_runner.SdcccRunnerAsync') as mock_runner:
+    with mock.patch('pysdccc._runner.SdcccRunner') as mock_runner:
         version = uuid.uuid4().hex
         mock_runner.return_value.get_version = mock.AsyncMock(return_value=version)
         assert await is_downloaded(version)

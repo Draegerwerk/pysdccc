@@ -13,7 +13,7 @@ from collections.abc import AsyncGenerator
 import anyio.from_thread
 import httpx
 
-from pysdccc import _async_runner, _common
+from pysdccc import _common, _runner
 
 if sys.version_info >= (3, 13):
     from warnings import deprecated
@@ -71,7 +71,7 @@ async def is_downloaded(version: str) -> bool:
     :return: True if the executable is already downloaded, False otherwise.
     """
     try:
-        return await _async_runner.SdcccRunnerAsync(pathlib.Path().absolute()).get_version() == version
+        return await _runner.SdcccRunner(pathlib.Path().absolute()).get_version() == version
     except (FileNotFoundError, subprocess.CalledProcessError):
         return False
 

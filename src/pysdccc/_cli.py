@@ -7,6 +7,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import zipfile
 
 import httpx
@@ -68,6 +69,7 @@ def _download_to_stream(url: httpx.URL, stream: io.IOBase, proxy: httpx.Proxy | 
                 stream.write(chunk)
                 progress.update(response.num_bytes_downloaded - num_bytes_downloaded)
                 num_bytes_downloaded = response.num_bytes_downloaded
+                time.sleep(0.1)
 
 
 def download(url: httpx.URL, output: pathlib.Path, proxy: httpx.Proxy | None = None):
