@@ -9,6 +9,7 @@ from unittest import mock
 import anyio
 import pytest
 
+from pysdccc import _common
 from pysdccc._async_runner import (
     __LOGGER__,
     DIRECT_TEST_RESULT_FILE_NAME,
@@ -21,12 +22,36 @@ from pysdccc._result_parser import TestSuite
 pytestmark = pytest.mark.anyio
 
 
+async def test_drain_stream():
+    """Test that the _drain_stream function correctly drains a stream and logs the output."""
+    expected_message = f'{uuid.uuid4().hex.encode()} {uuid.uuid4().hex.encode()} \n'.encode(_common.ENCODING)
+    send_stream, receive_stream = anyio.create_memory_object_stream[bytes]()
+    log_messages = []
+
+    def mock_log(message: object) -> None:
+        log_messages.append(message)
+
+    async with anyio.create_task_group() as tg:
+        tg.start_soon(_drain_stream, receive_stream, mock_log)  # pyright: ignore[reportArgumentType]
+        async with send_stream:
+            await send_stream.send(expected_message)
+    assert len(log_messages) == 1
+    assert log_messages[0] == expected_message.decode(_common.ENCODING).strip()
+
+
 async def test_sdccc_runner_init():
     """Test that the runner is correctly initialized and raises ValueError for relative paths."""
     with pytest.raises(ValueError, match='Path to test run directory must be absolute'):
         SdcccRunnerAsync(pathlib.Path(), pathlib.Path(__file__))
     with pytest.raises(ValueError, match='Path to executable must be absolute'):
         SdcccRunnerAsync(pathlib.Path().absolute(), pathlib.Path())
+    with pytest.raises(FileNotFoundError, match=f'No executable found under {pathlib.Path()}'):
+        SdcccRunnerAsync(pathlib.Path().absolute(), pathlib.Path().absolute())
+    with pytest.raises(
+        ValueError,
+        match=f'Test run directory "{pathlib.Path(__file__).absolute()}" is not a directory or does not exist',
+    ):
+        SdcccRunnerAsync(pathlib.Path(__file__).absolute(), pathlib.Path(__file__).absolute())
     runner = SdcccRunnerAsync(pathlib.Path().absolute(), pathlib.Path(__file__))
     assert runner.exe == pathlib.Path(__file__).absolute()
     assert runner.test_run_dir == pathlib.Path().absolute()
@@ -34,6 +59,8 @@ async def test_sdccc_runner_init():
         await runner._prepare_command(config=pathlib.Path().absolute(), requirements=pathlib.Path())  # noqa: SLF001
     with pytest.raises(ValueError, match='Path to config file must be absolute'):
         await runner._prepare_command(config=pathlib.Path(), requirements=pathlib.Path().absolute())  # noqa: SLF001
+    with pytest.raises(ValueError, match=f'{runner.test_run_dir} is not empty'):
+        await runner._prepare_command(config=pathlib.Path().absolute(), requirements=pathlib.Path().absolute())  # noqa: SLF001
 
 
 @mock.patch('tomllib.loads')

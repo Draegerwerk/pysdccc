@@ -14,6 +14,7 @@ dependencies = [
     "junitparser>=4",
     "httpx>=0.28.0",
     "anyio>=4.7.0",
+    "pytest>=8.4.1",
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -33,17 +34,17 @@ keywords = ["sdc", "SDCcc", "test", "wrapper"]
 
 [dependency-groups]
 test = [
-    "pytest>=8",
+    "pytest>=8.4.1",
     "pytest-html>=4",
-    "pytest-asyncio>=0.24",
-    "pytest-cov>=6.1.1",
+    "pytest-cov>=6.2.1",
     "trio>=0.30.0",
+    "pysdccc[cli]",
 ]
 dev = [
     { include-group = "test" },
     "pyright>=1.1.403",
     "lxml-stubs>=0.5.1",
-    "ruff>=0.9.6",
+    "ruff>=0.11.8",
 ]
 
 [project.scripts]
@@ -93,7 +94,6 @@ max-doc-length = 120 # https://docs.astral.sh/ruff/settings/#max-doc-length
 "__init__.py" = ["D104"]
 
 [tool.pytest.ini_options]
-asyncio_default_fixture_loop_scope = "function"
 testpaths = [
     "tests"
 ]

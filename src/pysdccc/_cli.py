@@ -30,7 +30,7 @@ class UrlType(click.ParamType):
         try:
             return httpx.URL(value)
         except Exception as e:  # noqa: BLE001
-            self.fail(f'{value!r} is not a valid url: {e}', param, ctx)
+            self.fail(f'{value} is not a valid url: {e}', param, ctx)
 
 
 URL = UrlType()
@@ -41,12 +41,12 @@ class ProxyType(click.ParamType):
 
     name = 'proxy'
 
-    def convert(self, value: str, param: click.Parameter | None, ctx: click.Context | None) -> httpx.Proxy | None:
+    def convert(self, value: str, param: click.Parameter | None, ctx: click.Context | None) -> httpx.Proxy:
         """Convert value to proxy."""
         try:
             return httpx.Proxy(value)
         except Exception as e:  # noqa: BLE001
-            self.fail(f'{value!r} is not a valid proxy: {e}', param, ctx)
+            self.fail(f'{value} is not a valid proxy: {e}', param, ctx)
 
 
 PROXY = ProxyType()
@@ -71,7 +71,7 @@ def _download_to_stream(url: httpx.URL, stream: io.IOBase, proxy: httpx.Proxy | 
 
 
 def download(url: httpx.URL, output: pathlib.Path, proxy: httpx.Proxy | None = None):
-    """Download and extract the executable from an url."""
+    """Download and extract the executable from a url."""
     click.echo(f'Downloading SDCcc from {url}.')
     with tempfile.NamedTemporaryFile('wb', suffix='.zip', delete=False) as temporary_file:
         _download_to_stream(url, temporary_file, proxy=proxy)  # type: ignore[arg-type]
@@ -90,7 +90,7 @@ def cli():
     pass
 
 
-@click.command(
+@cli.command(
     short_help='Install the SDCcc executable from the specified URL. Releases can be found at https://github.com/Draegerwerk/SDCcc/releases.',
 )
 @click.argument('url', type=URL)
@@ -111,11 +111,11 @@ def install(ctx: click.Context, url: httpx.URL, proxy: httpx.Proxy | None):
     try:
         download(url, _common.DEFAULT_STORAGE_DIRECTORY, proxy)
     except Exception as e:
-        msg = f'Failed to download and extract SDCcc from {url}: {e}.'
+        msg = f'Failed to download and extract SDCcc from {url}: {e}'
         raise click.ClickException(msg) from e
 
 
-@click.command(short_help='Uninstall the SDCcc executable by removing the directory.')
+@cli.command(short_help='Uninstall the SDCcc executable by removing the directory.')
 def uninstall():
     """Uninstall the SDCcc executable.
 
@@ -123,10 +123,6 @@ def uninstall():
     """
     with contextlib.suppress(FileNotFoundError):
         shutil.rmtree(_common.DEFAULT_STORAGE_DIRECTORY)
-
-
-cli.add_command(install)
-cli.add_command(uninstall)
 
 
 def sdccc():
@@ -138,7 +134,8 @@ def sdccc():
             cwd=sdccc_exe.parent,
         )
     except FileNotFoundError as e:
-        click.ClickException("SDCcc is not installed. Please install using 'pysdccc install <url>'.").show()
+        # because this is not a click command, we need to handle the error manually
+        click.echo("SDCcc is not installed. Please install using 'pysdccc install <url>'.", err=True)
         raise SystemExit(1) from e
     except subprocess.CalledProcessError as e:
         click.echo(e, err=True)
