@@ -30,7 +30,7 @@ def test_sdccc_runner_check_requirements(mock_check_requirements: mock.AsyncMock
         pathlib.Path().absolute(),
         pathlib.Path(__file__).parent.joinpath('testversion').joinpath('sdccc.exe').absolute(),
     )
-    run.check_requirements(path)
+    run.check_requirements(path).result()
     mock_check_requirements.assert_called_once_with(path)
 
 
@@ -41,7 +41,7 @@ def test_configuration(mock_get_config: mock.AsyncMock):
         pathlib.Path().absolute(),
         pathlib.Path(__file__).parent.joinpath('testversion/sdccc.exe').absolute(),
     )
-    run.get_config()
+    run.get_config().result()
     mock_get_config.assert_called_once_with()
 
 
@@ -52,7 +52,7 @@ def test_requirements(mock_get_requirements: mock.AsyncMock):
         pathlib.Path().absolute(),
         pathlib.Path(__file__).parent.joinpath('testversion/sdccc.exe').absolute(),
     )
-    run.get_requirements()
+    run.get_requirements().result()
     mock_get_requirements.assert_called_once_with()
 
 
@@ -60,7 +60,7 @@ def test_requirements(mock_get_requirements: mock.AsyncMock):
 def test_sdccc_runner_get_version_expected(mock_get_version: mock.AsyncMock):
     """Test that the runner correctly retrieves the version of the SDCcc executable."""
     run = SdcccRunner(pathlib.Path().absolute(), pathlib.Path(__file__).absolute())
-    run.get_version()
+    run.get_version().result()
     mock_get_version.assert_called_once_with()
 
 
@@ -81,7 +81,7 @@ def test_sdccc_runner_get_version_error():
         ) as mock_get_version,
         pytest.raises(subprocess.CalledProcessError) as exc_info,
     ):
-        runner.get_version()
+        runner.get_version().result()
     assert exc_info.value.cmd == cmd
     assert exc_info.value.returncode == returncode
     assert exc_info.value.stdout == stdout
@@ -95,5 +95,5 @@ def test_sdccc_runner_run(mock_run: mock.AsyncMock):
     run = SdcccRunner(pathlib.Path().absolute(), pathlib.Path(__file__).absolute())
     config = uuid.uuid4().hex
     requirements = uuid.uuid4().hex
-    run.run(config=config, requirements=requirements)
+    run.run(config=config, requirements=requirements).result()
     mock_run.assert_called_once_with(config=config, requirements=requirements)

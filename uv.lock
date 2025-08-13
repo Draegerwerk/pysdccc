@@ -340,6 +340,7 @@ dependencies = [
     { name = "anyio" },
     { name = "httpx" },
     { name = "junitparser" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
 ]
 
 [package.optional-dependencies]
@@ -372,6 +373,7 @@ requires-dist = [
     { name = "click", marker = "extra == 'cli'", specifier = ">=8.0" },
     { name = "httpx", specifier = ">=0.28.0" },
     { name = "junitparser", specifier = ">=4" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
 ]
 provides-extras = ["cli"]
 

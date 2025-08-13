@@ -27,8 +27,8 @@ import pysdccc
 
 
 def main():
-    if not pysdccc.is_downloaded("my-specific-version"):
-        pysdccc.download("https://url/to/sdccc.zip")
+    if not pysdccc.is_downloaded_sync("my-specific-version"):
+        pysdccc.download_sync("https://url/to/sdccc.zip")
 
     runner = pysdccc.SdcccRunner(
         pathlib.Path("/path/to/sdccc/result/directory"),
@@ -60,8 +60,8 @@ import pysdccc
 
 
 async def main():
-    if not await pysdccc.ais_downloaded("my-specific-version"):
-        await pysdccc.adownload("https://url/to/sdccc.zip")
+    if not await pysdccc.is_downloaded("my-specific-version"):
+        await pysdccc.download("https://url/to/sdccc.zip")
 
     runner = pysdccc.SdcccRunnerAsync(
         pathlib.Path("/path/to/sdccc/result/directory"),

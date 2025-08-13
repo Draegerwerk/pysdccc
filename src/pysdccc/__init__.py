@@ -2,7 +2,7 @@
 
 from pysdccc._async_runner import SdcccRunnerAsync
 from pysdccc._common import DEFAULT_STORAGE_DIRECTORY, check_requirements
-from pysdccc._download import adownload, ais_downloaded, download, is_downloaded
+from pysdccc._download import download, download_sync, is_downloaded, is_downloaded_sync
 from pysdccc._result_parser import TestCase, TestSuite
 from pysdccc._runner import (
     SdcccRunner,
@@ -16,9 +16,9 @@ __all__ = [
     'SdcccRunnerAsync',
     'TestCase',
     'TestSuite',
-    'adownload',
-    'ais_downloaded',
     'check_requirements',
     'download',
+    'download_sync',
     'is_downloaded',
+    'is_downloaded_sync',
 ]

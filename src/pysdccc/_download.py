@@ -5,6 +5,7 @@ import contextlib
 import logging
 import pathlib
 import subprocess
+import sys
 import zipfile
 from collections.abc import AsyncGenerator
 
@@ -12,6 +13,11 @@ import anyio.from_thread
 import httpx
 
 from pysdccc import _async_runner, _common
+
+if sys.version_info >= (3, 13):
+    from warnings import deprecated
+else:
+    from typing_extensions import deprecated
 
 logger = logging.getLogger('pysdccc.download')
 
@@ -28,7 +34,7 @@ async def _open_download_stream(
         yield response
 
 
-async def adownload(
+async def download(
     url: httpx.URL | str,
     proxy: httpx.Proxy | None = None,
     output: pathlib.Path | None = None,
@@ -56,7 +62,7 @@ async def adownload(
     return _common.get_exe_path(output)
 
 
-async def ais_downloaded(version: str) -> bool:
+async def is_downloaded(version: str) -> bool:
     """Check if the SDCcc version is already downloaded.
 
     This function checks if the SDCcc executable is already downloaded.
@@ -69,7 +75,8 @@ async def ais_downloaded(version: str) -> bool:
         return False
 
 
-def download(
+@deprecated('Prefer using the async version of the runner instead.')
+def download_sync(
     url: httpx.URL | str,
     proxy: httpx.Proxy | None = None,
     output: pathlib.Path | None = None,
@@ -83,10 +90,11 @@ def download(
     :return: Path to the executable.
     """
     with anyio.from_thread.start_blocking_portal() as portal:
-        return portal.start_task_soon(adownload, url, proxy, output)
+        return portal.start_task_soon(download, url, proxy, output)
 
 
-def is_downloaded(version: str) -> concurrent.futures.Future[bool]:
+@deprecated('Prefer using the async version of the runner instead.')
+def is_downloaded_sync(version: str) -> concurrent.futures.Future[bool]:
     """Check if the SDCcc version is already downloaded.
 
     This function checks if the SDCcc executable is already downloaded.
@@ -94,4 +102,4 @@ def is_downloaded(version: str) -> concurrent.futures.Future[bool]:
     :return: True if the executable is already downloaded, False otherwise.
     """
     with anyio.from_thread.start_blocking_portal() as portal:
-        return portal.start_task_soon(ais_downloaded, version)
+        return portal.start_task_soon(is_downloaded, version)
