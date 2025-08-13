@@ -49,7 +49,7 @@ async def test_sdccc_runner_init():
         SdcccRunnerAsync(pathlib.Path().absolute(), pathlib.Path().absolute())
     with pytest.raises(
         ValueError,
-        match=f'Test run directory "{pathlib.Path(__file__).absolute()}" is not a directory or does not exist',
+        match=rf'Test run directory "{pathlib.Path(__file__).absolute()}" is not a directory or does not exist',
     ):
         SdcccRunnerAsync(pathlib.Path(__file__).absolute(), pathlib.Path(__file__).absolute())
     runner = SdcccRunnerAsync(pathlib.Path().absolute(), pathlib.Path(__file__))
