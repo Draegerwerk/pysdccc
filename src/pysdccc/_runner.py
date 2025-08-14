@@ -122,7 +122,7 @@ class SdcccRunner:
         as TestSuite objects.
 
         :param file_name: The name of the result file to read.
-        :return: A tuple containing the parsed direct and invariant test results as TestSuite objects.
+        :return: A tuple containing the parsed direct and invariant test results as TestSuite objects.A test suite containing the parsed results, or None if the file does not exist.
         """
         test_result_dir = self.test_run_dir.joinpath(file_name)
         if not await test_result_dir.exists():
