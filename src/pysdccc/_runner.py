@@ -1,3 +1,5 @@
+"""Implements the runner for the SDCcc executable."""
+
 import logging
 import pathlib
 import tomllib
