@@ -21,6 +21,7 @@ __LOGGER__ = logging.getLogger('pysdccc.run')
 
 
 async def _drain_stream(stream: ByteReceiveStream, log: Callable[[object], None]) -> None:
+    """Drain the given stream and log its content."""
     async for chunk in TextReceiveStream(stream, encoding=_common.ENCODING):
         log(chunk.strip())
 
@@ -120,6 +121,7 @@ class SdcccRunner:
         This method reads the direct and invariant test result files from the test run directory and returns them
         as TestSuite objects.
 
+        :param file_name: The name of the result file to read.
         :return: A tuple containing the parsed direct and invariant test results as TestSuite objects.
         """
         test_result_dir = self.test_run_dir.joinpath(file_name)
