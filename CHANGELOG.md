@@ -10,10 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - capture logs of the SDCcc subprocess
+- added a deprecation warning to all sync functions (except in `_cli.py`)
 
 ### Changed
 
 - Remove some of the duplicated code by running async code with anyio
+- replaced sync methods of `download` and `is_downloaded` with async functions and added a `_sync` extension to the end of the sync functions
+- updated dependencies. most notable is increasing the `junitparser>=4`
 
 ## [0.1.0] - 2025-05-16
 
