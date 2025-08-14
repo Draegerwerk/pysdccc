@@ -122,10 +122,11 @@ class TestSuite(junitparser.TestSuite):
 
         This method reads a JUnit XML file and parses it into a `TestSuite` object containing custom elements.
 
-        :param file: The path to the test suite file to be parsed. Can be a `pathlib.Path` object or a string.
+        :param file: The path to the test suite file to be parsed.
         :return: A `TestSuite` object containing the parsed test cases with custom elements.
         :raises ValueError: If the parsed file does not contain a `TestSuite` object.
         :raises FileNotFoundError: If the file does not exist.
+        :raises TypeError: If the content of the xml is not a TestSuite.
         """
         suite_xml = await anyio.to_thread.run_sync(junitparser.JUnitXml.fromfile, str(file))
         suite = next(iter(suite_xml), None)

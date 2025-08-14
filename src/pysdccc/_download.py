@@ -76,7 +76,7 @@ async def is_downloaded(version: str) -> bool:
         return False
 
 
-@deprecated('Prefer using the async version of the runner instead.')
+@deprecated('Prefer using the async version `download` instead.')
 def download_sync(
     url: httpx.URL | str,
     proxy: httpx.Proxy | None = None,
@@ -94,7 +94,7 @@ def download_sync(
         return portal.start_task_soon(download, url, proxy, output)
 
 
-@deprecated('Prefer using the async version of the runner instead.')
+@deprecated('Prefer using the async version `is_downloaded` instead.')
 def is_downloaded_sync(version: str) -> concurrent.futures.Future[bool]:
     """Check if the SDCcc version is already downloaded.
 
