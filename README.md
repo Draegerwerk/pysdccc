@@ -13,37 +13,27 @@ Download from pypi using `pip install pysdccc`. There is also an option to use t
 For this open source project the [Contributor License Agreement](Contributor_License_Agreement.md) governs all relevant activities and your contributions. By contributing to the project you agree to be bound by this Agreement and to licence your work accordingly.
 
 1. clone the repository
-2. install dependencies, e.g. with [`uv sync --dev --all-extras`](https://docs.astral.sh/uv/reference/cli/#uv-sync)
+2. install dependencies, e.g. with [`uv sync --dev`](https://docs.astral.sh/uv/reference/cli/#uv-sync)
 
 ## Usage
 
 ### Quick start
 
 ```python
-import pathlib
-import subprocess
-
 import pysdccc
 
 
-def main():
-    if not pysdccc.is_downloaded("my-specific-version"):
-        pysdccc.download("https://url/to/sdccc.zip")
+async def main():
+    if not await pysdccc.is_downloaded("my-specific-version"):
+        await pysdccc.download("https://url/to/sdccc.zip")
 
-    runner = pysdccc.SdcccRunner(
-        pathlib.Path("/path/to/sdccc/result/directory"),
+    runner = pysdccc.SdcccRunner("/path/to/sdccc/result/directory")
+
+    # https://github.com/Draegerwerk/SDCcc/?tab=readme-ov-file#exit-codes
+    return_code, direct_result, invariant_result = await runner.run(
+        config="/path/to/configuration/file.toml",
+        requirements="/path/to/requirements/file.toml",
     )
-
-    try:
-        # https://github.com/Draegerwerk/SDCcc/?tab=readme-ov-file#exit-codes
-        return_code, direct_result, invariant_result = runner.run(
-            config=pathlib.Path("/path/to/configuration/file.toml"),
-            requirements=pathlib.Path("/path/to/requirements/file.toml"),
-        )
-    except subprocess.TimeoutExpired:
-        print("Timeout occurred")
-        return
-
     if direct_result is None or invariant_result is None:
         print("No result file available")
         return
@@ -51,7 +41,7 @@ def main():
     for test_case in direct_result + invariant_result:
         print(f"{test_case.test_identifier}: {test_case.is_passed}")
 ```
-If you look for an async version
+If you look for a synchronous version. Please note this is deprecated. The async methods are the preferred way.
 
 ```python
 import pathlib
@@ -60,58 +50,48 @@ import pysdccc
 
 
 async def main():
-    if not await pysdccc.ais_downloaded("my-specific-version"):
-        await pysdccc.adownload("https://url/to/sdccc.zip")
+    if not pysdccc.is_downloaded_sync("my-specific-version"):
+        pysdccc.download_sync("https://url/to/sdccc.zip")
 
-    runner = pysdccc.SdcccRunnerAsync(
-        pathlib.Path("/path/to/sdccc/result/directory"),
-    )
+    runner = pysdccc.SdcccRunnerSync("/path/to/sdccc/result/directory")
 
     # https://github.com/Draegerwerk/SDCcc/?tab=readme-ov-file#exit-codes
-    return_code, direct_result, invariant_result = await runner.run(
-        config=pathlib.Path("/path/to/configuration/file.toml"),
-        requirements=pathlib.Path("/path/to/requirements/file.toml"),
-    )
+    return_code, direct_result, invariant_result = runner.run(
+        config="/path/to/configuration/file.toml",
+        requirements="/path/to/requirements/file.toml",
+    ).result(timeout=60)  # use .result(timeout=...) to wait for the result in a synchronous way
 
     # checkout example from above ...
 ```
-
-### Download an SDCcc executable
-
-Check out `pysdccc.download` or `pysdccc.adownload`. If the command line interface of `pysdccc` is installed, the zipped source of SDCcc can be installed using this command: `pysdccc install https://url/to/sdccc.zip`
 
 ### Create configuration file
 
 Configure the test consumer. Check the [test consumer configuration](https://github.com/Draegerwerk/SDCcc/?tab=readme-ov-file#test-consumer-configuration) for more information.
 
 ```python
-import pathlib
-
+import anyio
 import toml  # has to be installed by the user
 
 import pysdccc
 
-config = {
-    'SDCcc': {
-        ...  # add all relevant config parameter
+
+async def main():
+    config = {
+        'SDCcc': {
+            ...  # add all relevant config parameter
+        }
     }
-}
-config_path = pathlib.Path('/path/to/configuration/file.toml')
-config_path.write_text(toml.dumps(config))
+    config_path = anyio.Path('/path/to/configuration/file.toml')
+    await config_path.write_text(toml.dumps(config))
 
-runner = pysdccc.SdcccRunner(
-    pathlib.Path('/path/to/sdccc/result/directory'),
-)
+    runner = pysdccc.SdcccRunner('/path/to/sdccc/result/directory')
 
-runner.run(
-    config=config_path,
-    requirements=pathlib.Path('/path/to/requirements/file.toml'),
-)
+    await runner.run(config=config_path, requirements='/path/to/requirements/file.toml')
 
-# or if you have already downloaded SDCcc
-config = runner.get_config()  # load default configuration
-config['SDCcc']['Consumer']['DeviceEpr'] = "urn:uuid:12345678-1234-1234-1234-123456789012"  # e.g. change device epr
-# save and run as above
+    # or if you have already downloaded SDCcc
+    config = await runner.get_config()  # load default configuration
+    config['SDCcc']['Consumer']['DeviceEpr'] = "urn:uuid:12345678-1234-1234-1234-123456789012"  # e.g. change device epr
+    # save and run as above
 ```
 
 ### Create requirements file
@@ -119,35 +99,32 @@ config['SDCcc']['Consumer']['DeviceEpr'] = "urn:uuid:12345678-1234-1234-1234-123
 Enable or disable specific requirements. Check the [test requirements](https://github.com/Draegerwerk/SDCcc/?tab=readme-ov-file#enabling-tests) for more information.
 
 ```python
-import pathlib
-
+import anyio
 import toml  # has to be installed by the user
 
 import pysdccc
 
-requirements = {
-    # the standard name is the key, the requirement from the standard is the value
-    'BICEPS': {
-        ...  # add all requirements to be tested
+
+async def main():
+    requirements = {
+        # the standard name is the key, the requirement from the standard is the value
+        'BICEPS': {
+            ...  # add all requirements to be tested
+        }
     }
-}
-requirements_path = pathlib.Path('/path/to/requirement/file.toml')
-requirements_path.write_text(toml.dumps(requirements))
+    requirements_path = anyio.Path('/path/to/requirement/file.toml')
+    await requirements_path.write_text(toml.dumps(requirements))
 
-runner = pysdccc.SdcccRunner(
-    pathlib.Path('/path/to/sdccc/result/directory'),
-)
-# optionally, check whether you did not add a requirement that is not available
-runner.check_requirements(requirements_path)
-runner.run(
-    config=pathlib.Path('/path/to/configuration/file.toml'),
-    requirements=requirements_path,
-)
+    runner = pysdccc.SdcccRunner('/path/to/sdccc/result/directory')
 
-# or, if you have already downloaded SDCcc
-requirements = runner.get_requirements()  # load default configuration
-requirements['BICEPS']['R0033'] = False  # e.g. disable biceps R0033
-# save and run as above
+    # optionally, check whether you did not add a requirement that is not available
+    await runner.check_requirements(requirements_path)
+    await runner.run('/path/to/configuration/file.toml', requirements=requirements_path)
+
+    # or, if you have already downloaded SDCcc
+    requirements = await runner.get_requirements()  # load default configuration
+    requirements['BICEPS']['R0033'] = False  # e.g. disable biceps R0033
+    # save and run as above
 ```
 
 ### Create test parameter configuration
@@ -155,34 +132,38 @@ requirements['BICEPS']['R0033'] = False  # e.g. disable biceps R0033
 Some tests require individual parameters. Check the [test parameter configuration](https://github.com/Draegerwerk/SDCcc/?tab=readme-ov-file#test-parameter-configuration) for more information.
 
 ```python
-import pathlib
-
+import anyio
 import toml  # has to be installed by the user
 
 import pysdccc
 
-testparameter_config = {
-    'TestParameter': {
-        ...
+
+async def main():
+    testparameter_config = {
+        'TestParameter': {
+            ...
+        }
     }
-}
-testparameter_config_path = pathlib.Path('/path/to/test_parameter/file.toml')
-testparameter_config_path.write_text(toml.dumps(testparameter_config))
+    testparameter_config_path = anyio.Path('/path/to/test_parameter/file.toml')
+    await testparameter_config_path.write_text(toml.dumps(testparameter_config))
 
-runner = pysdccc.SdcccRunner(
-    pathlib.Path('/path/to/sdccc/result/directory'),
-)
-runner.run(
-    config=pathlib.Path('/path/to/configuration/file.toml'),
-    requirements=pathlib.Path('/path/to/requirements/file.toml'),
-    testparam=testparameter_config_path,
-)
+    runner = pysdccc.SdcccRunner('/path/to/sdccc/result/directory')
+    await runner.run(
+        config='/path/to/configuration/file.toml',
+        requirements='/path/to/requirements/file.toml',
+        testparam=testparameter_config_path,
+    )
 
-# or, if you have already downloaded SDCcc
-testparameter_config = runner.get_test_parameter()  # load default configuration
-testparameter_config['TestParameter']['Biceps547TimeInterval'] = 10
-# save and run as above
+    # or, if you have already downloaded SDCcc
+    testparameter_config = await runner.get_test_parameter()  # load default configuration
+    testparameter_config['TestParameter']['Biceps547TimeInterval'] = 10
+    # save and run as above
 ```
+
+### Logging
+
+The SDCcc runner provides a logger called `pysdccc.run` that can be used to log messages during the execution of the tests. Stdout is mapped to logging level `info` and stderr to `error`.
+Be aware that no further processing of the SDCcc process output is done. Depending on the format you use you may get duplicated timestamps, etc. Also, it might happen that a java error can stretch over multiple lines, which may result in multiple log messages in python for the same java error.
 
 ### Execute SDCcc from command-line interface (cli)
 

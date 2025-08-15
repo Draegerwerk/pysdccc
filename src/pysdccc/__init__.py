@@ -1,12 +1,11 @@
 """Python wrapper to the SDCcc tool for testing SDC devices."""
 
-from pysdccc._common import DEFAULT_STORAGE_DIRECTORY
-from pysdccc._download import adownload, ais_downloaded, download, is_downloaded
+from pysdccc._common import DEFAULT_STORAGE_DIRECTORY, check_requirements
+from pysdccc._download import download, download_sync, is_downloaded, is_downloaded_sync
 from pysdccc._result_parser import TestCase, TestSuite
-from pysdccc._runner import (
-    SdcccRunner,
-    SdcccRunnerAsync,
-    check_requirements,
+from pysdccc._runner import SdcccRunner
+from pysdccc._runner_sync import (
+    SdcccRunnerSync,
 )
 
 __version__ = '0.0.0'
@@ -14,12 +13,12 @@ __version__ = '0.0.0'
 __all__ = [
     'DEFAULT_STORAGE_DIRECTORY',
     'SdcccRunner',
-    'SdcccRunnerAsync',
+    'SdcccRunnerSync',
     'TestCase',
     'TestSuite',
-    'adownload',
-    'ais_downloaded',
     'check_requirements',
     'download',
+    'download_sync',
     'is_downloaded',
+    'is_downloaded_sync',
 ]

@@ -5,13 +5,13 @@
 # * Run "pre-commit install".
 repos:
   - repo: https://github.com/adrienverge/yamllint
-    rev: v1.35.1
+    rev: v1.37.1
     hooks:
       - id: yamllint
         args: ['-d {extends: relaxed, rules: {line-length: disable, new-lines: { type: unix }}}', '-s']
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-toml
       - id: check-yaml
@@ -24,27 +24,27 @@ repos:
       - id: check-illegal-windows-names
 
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.6.3
+    rev: 0.8.9
     hooks:
       # Update the uv lockfile
       - id: uv-lock
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.9.7
+    rev: v0.12.8
     hooks:
       - id: ruff
         args: [--fix, --show-fixes]
       - id: ruff-format
 
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.394
+    rev: v1.1.403
     hooks:
       - id: pyright
         additional_dependencies:
           - click >= 8
           - pytest >= 8
           - lxml-stubs >= 0.5.1
-          - junitparser >= 3.1.2
+          - junitparser >= 4
           - httpx >= 0.28.0
 
   - repo: https://github.com/pre-commit/pygrep-hooks

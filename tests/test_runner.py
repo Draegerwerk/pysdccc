@@ -1,80 +1,102 @@
-"""tests for module runner.py."""
+"""tests for async runner module."""
 
 import pathlib
+import re
 import subprocess
 import tomllib
 import uuid
 from unittest import mock
 
+import anyio
 import pytest
 
+from pysdccc import _common
 from pysdccc._result_parser import TestSuite
 from pysdccc._runner import (
+    __LOGGER__,
     DIRECT_TEST_RESULT_FILE_NAME,
     INVARIANT_TEST_RESULT_FILE_NAME,
     SdcccRunner,
-    SdcccRunnerAsync,
-    _BaseRunner,
-    check_requirements,
+    _drain_stream,
 )
 
-
-def test_check_requirements():
-    """Test that the requirements are correctly checked against the provided requirements."""
-    provided = {'biceps': {'b1': True}}
-    available = {'biceps': {'b1': True, 'b2': True}}
-    check_requirements(provided, available)
-
-    provided['biceps']['b3'] = True
-    with pytest.raises(KeyError):
-        check_requirements(provided, available)
-
-    provided['biceps']['b3'] = False
-    check_requirements(provided, available)
-
-    provided['mdpws'] = {}
-    provided['mdpws']['m1'] = True
-    with pytest.raises(KeyError):
-        check_requirements(provided, available)
-
-    provided['mdpws']['m1'] = False
-    with pytest.raises(KeyError):
-        check_requirements(provided, available)
+pytestmark = pytest.mark.anyio
 
 
-def test_sdccc_runner_init():
-    """Test that the SdcccRunner is correctly initialized and raises ValueError for relative paths."""
+async def test_drain_stream():
+    """Test that the _drain_stream function correctly drains a stream and logs the output."""
+    expected_message = f'{uuid.uuid4().hex.encode()} {uuid.uuid4().hex.encode()} \n'.encode(_common.ENCODING)
+    send_stream, receive_stream = anyio.create_memory_object_stream[bytes]()
+    log_messages = []
+
+    def mock_log(message: object) -> None:
+        log_messages.append(message)
+
+    async with anyio.create_task_group() as tg:
+        tg.start_soon(_drain_stream, receive_stream, mock_log)  # pyright: ignore[reportArgumentType]
+        async with send_stream:
+            await send_stream.send(expected_message)
+    assert len(log_messages) == 1
+    assert log_messages[0] == expected_message.decode(_common.ENCODING).strip()
+
+
+async def test_sdccc_runner_init():
+    """Test that the runner is correctly initialized and raises ValueError for relative paths."""
     with pytest.raises(ValueError, match='Path to test run directory must be absolute'):
-        _BaseRunner(pathlib.Path(), pathlib.Path(__file__))
+        SdcccRunner(pathlib.Path(), pathlib.Path(__file__))
     with pytest.raises(ValueError, match='Path to executable must be absolute'):
-        _BaseRunner(pathlib.Path().absolute(), pathlib.Path())
-    runner = _BaseRunner(pathlib.Path().absolute(), pathlib.Path(__file__))
-    assert runner.exe == pathlib.Path(__file__).absolute()
-    assert runner.test_run_dir == pathlib.Path().absolute()
+        SdcccRunner(pathlib.Path().absolute(), pathlib.Path())
+    with pytest.raises(FileNotFoundError, match=f'No executable found under {pathlib.Path()}'):
+        SdcccRunner(pathlib.Path().absolute(), pathlib.Path().absolute())
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            f'Test run directory "{pathlib.Path(__file__).absolute()}" is not a directory or does not exist'
+        ),
+    ):
+        SdcccRunner(pathlib.Path(__file__).absolute(), pathlib.Path(__file__).absolute())
+    runner = SdcccRunner(pathlib.Path().absolute(), pathlib.Path(__file__))
+    assert runner.exe == await anyio.Path(__file__).absolute()
+    assert runner.test_run_dir == await anyio.Path().absolute()
     with pytest.raises(ValueError, match='Path to requirements file must be absolute'):
-        runner._prepare_command(config=pathlib.Path().absolute(), requirements=pathlib.Path())  # noqa: SLF001
+        await runner._prepare_command(config=await anyio.Path().absolute(), requirements=anyio.Path())  # noqa: SLF001
     with pytest.raises(ValueError, match='Path to config file must be absolute'):
-        runner._prepare_command(config=pathlib.Path(), requirements=pathlib.Path().absolute())  # noqa: SLF001
+        await runner._prepare_command(config=anyio.Path(), requirements=await anyio.Path().absolute())  # noqa: SLF001
+    with pytest.raises(ValueError, match=re.escape(f'{runner.test_run_dir} is not empty')):
+        await runner._prepare_command(config=await anyio.Path().absolute(), requirements=await anyio.Path().absolute())  # noqa: SLF001
 
 
-def test_sdccc_runner_check_requirements():
-    """Test that the SdcccRunner correctly checks the requirements."""
-    runner = _BaseRunner(
+@mock.patch('tomllib.loads')
+@mock.patch.object(SdcccRunner, 'get_requirements')
+async def test_sdccc_runner_check_requirements(mock_get_requirements: mock.AsyncMock, mock_loads: mock.MagicMock):
+    """Test that the runner correctly checks the requirements."""
+    mock_get_requirements.return_value = {
+        'test': {'test1': True, 'test2': False},
+        'another_test': {'test3': True, 'test4': False},
+    }
+    mock_loads.return_value = {
+        'test': {'test1': True, 'test2': False},
+        'another_test': {'test3': True, 'test4': False},
+    }
+    runner = SdcccRunner(
         pathlib.Path().absolute(),
         pathlib.Path(__file__).parent.joinpath('testversion').joinpath('sdccc.exe').absolute(),
     )
-    with mock.patch('pysdccc._runner._BaseRunner.check_requirements') as mock_check_requirements:
-        runner.check_requirements(pathlib.Path('requirements.toml'))
-        mock_check_requirements.assert_called_once()
+    with (
+        mock.patch('anyio.Path.read_text'),
+        mock.patch('pysdccc._common.check_requirements') as mock_check_requirements,
+    ):
+        await runner.check_requirements(pathlib.Path('requirements.toml'))
+    mock_check_requirements.assert_called_once_with(mock_loads.return_value, mock_get_requirements.return_value)
 
 
-def test_configuration():
-    """Test that the SdcccRunner correctly loads the configuration from the SDCcc executable's directory."""
-    run = _BaseRunner(
+async def test_configuration():
+    """Test that the runner correctly loads the configuration from the SDCcc executable's directory."""
+    run = SdcccRunner(
         pathlib.Path().absolute(),
         pathlib.Path(__file__).parent.joinpath('testversion/sdccc.exe').absolute(),
     )
-    loaded_config = run.get_config()
+    loaded_config = await run.get_config()
     provided_config = """
 [SDCcc]
 CIMode=false
@@ -126,13 +148,13 @@ Biceps547TimeInterval=5
     assert tomllib.loads(provided_config) == loaded_config
 
 
-def test_requirements():
-    """Test that the SdcccRunner correctly loads the requirements from the SDCcc executable's directory."""
+async def test_requirements():
+    """Test that the runner correctly loads the requirements from the SDCcc executable's directory."""
     run = SdcccRunner(
         pathlib.Path().absolute(),
         pathlib.Path(__file__).parent.joinpath('testversion/sdccc.exe').absolute(),
     )
-    loaded_config = run.get_requirements()
+    loaded_config = await run.get_requirements()
     provided_config = """
 [MDPWS]
 R0006=false
@@ -240,8 +262,20 @@ R0080=true
     assert tomllib.loads(provided_config) == loaded_config
 
 
-def test_parse_result():
-    """Test that the SdcccRunner correctly parses the test results from the SDCcc executable's directory."""
+async def test_parameter():
+    """Test that the runner correctly loads the test parameters from the SDCcc executable's directory."""
+    run = SdcccRunner(
+        pathlib.Path().absolute(),
+        pathlib.Path(__file__).parent.joinpath('testversion/sdccc.exe').absolute(),
+    )
+    loaded_config = await run.get_test_parameter()
+    provided_config = """[TestParameter]
+Biceps547TimeInterval=5"""
+    assert tomllib.loads(provided_config) == loaded_config
+
+
+async def test_parse_result():
+    """Test that the runner correctly parses the test results from the SDCcc executable's directory."""
     invariant = (
         (
             'BICEPS.R6039',
@@ -274,7 +308,7 @@ def test_parse_result():
         ),
         ('SDCccTestRunValidity', 'SDCcc Test Run Validity'),
     )
-    run = _BaseRunner(
+    run = SdcccRunner(
         pathlib.Path(__file__).parent.joinpath('sdccc_example_results').absolute(), pathlib.Path(__file__).absolute()
     )
     direct_results = run._get_result(DIRECT_TEST_RESULT_FILE_NAME)  # noqa: SLF001
@@ -284,57 +318,125 @@ def test_parse_result():
         assert isinstance(suite, TestSuite)
         assert len(data) == len(suite)
 
-    verify_suite(direct_results, direct)
-    verify_suite(invariant_results, invariant)
+    verify_suite(await direct_results, direct)
+    verify_suite(await invariant_results, invariant)
 
 
-def test_sdccc_runner_version():
-    """Test that the SdcccRunner correctly loads the version."""
+async def test_sdccc_runner_get_version_expected():
+    """Test that the runner correctly retrieves the version of the SDCcc executable."""
     runner = SdcccRunner(pathlib.Path().absolute(), pathlib.Path(__file__).absolute())
     version = uuid.uuid4().hex
-    with mock.patch('subprocess.run') as mock_run:
-        mock_run.return_value = subprocess.CompletedProcess(args=[], returncode=0, stdout=version.encode(), stderr=b'')
-        assert runner.get_version() == version
-
-    # test exception handling
-    returncode = int(uuid.uuid4())
-    stdout = uuid.uuid4().hex.encode()
-    stderr = uuid.uuid4().hex.encode()
-    with mock.patch('subprocess.Popen') as mock_popen:
-        mock_popen.return_value.__enter__.return_value.communicate.return_value = stdout, stderr
-        mock_popen.return_value.__enter__.return_value.poll.return_value = returncode
-        with pytest.raises(subprocess.CalledProcessError) as e:
-            assert runner.get_version() == ''
-    assert e.value.returncode == returncode
-    assert e.value.stdout == stdout
-    assert e.value.stderr == stderr
-
-
-@pytest.mark.asyncio
-async def test_sdccc_runner_version_async():
-    """Test that the SdcccRunner correctly loads the version."""
-    runner = SdcccRunnerAsync(pathlib.Path().absolute(), pathlib.Path(__file__).absolute())
-    version = uuid.uuid4().hex
-    with mock.patch('anyio.run_process') as mock_process:
-        completed_process_mock = mock.MagicMock()
-        completed_process_mock.stdout = version.encode()
-        mock_process.return_value = completed_process_mock
+    with mock.patch('anyio.run_process') as mock_run_process:
+        mock_run_process.return_value = subprocess.CompletedProcess(
+            args=[], returncode=0, stdout=version.encode(), stderr=b''
+        )
         assert await runner.get_version() == version
 
-    # test exception handling
-    returncode = int(uuid.uuid4())
+
+async def test_sdccc_runner_get_version_error():
+    """Test that the runner correctly raises CalledProcessError and provides exception info."""
+    runner = SdcccRunner(pathlib.Path().absolute(), pathlib.Path(__file__).absolute())
+
+    returncode = int(uuid.uuid4().int & 0xFFFFFFFF)  # ensure that the return code is a 32-bit integer
     stdout = uuid.uuid4().hex.encode()
     stderr = uuid.uuid4().hex.encode()
-
-    def _side_effect(*_, **__):  # noqa: ANN002, ANN003
-        raise subprocess.CalledProcessError(returncode=returncode, cmd='', output=stdout, stderr=stderr)
+    cmd = [uuid.uuid4().hex]
 
     with (
-        mock.patch('anyio.run_process', side_effect=_side_effect) as mock_process,
-        pytest.raises(subprocess.CalledProcessError) as e,
+        mock.patch(
+            'anyio.run_process',
+            side_effect=subprocess.CalledProcessError(returncode, cmd, output=stdout, stderr=stderr),
+        ) as mock_run_process,
+        pytest.raises(subprocess.CalledProcessError) as exc_info,
     ):
-        assert await runner.get_version() == ''
-    assert e.value.returncode == returncode
-    assert e.value.stdout == stdout
-    assert e.value.stderr == stderr
-    mock_process.assert_called_with([runner.exe, '--version'], check=True, cwd=runner.exe.parent)
+        await runner.get_version()
+    assert exc_info.value.cmd == cmd
+    assert exc_info.value.returncode == returncode
+    assert exc_info.value.stdout == stdout
+    assert exc_info.value.stderr == stderr
+    mock_run_process.assert_called_once_with([runner.exe, '--version'], check=True, cwd=runner.exe.parent)
+
+
+async def test_sdccc_runner_run_success():
+    """Test that run returns (returncode, direct, invariant) if the process exits with a zero code."""
+    config = pathlib.Path(__file__).parent.joinpath('test_version', 'configuration', 'config.toml')
+    requirements = pathlib.Path(__file__).parent.joinpath('test_version', 'configuration', 'test_configuration.toml')
+    async with anyio.TemporaryDirectory() as temp_dir:
+        runner = SdcccRunner(temp_dir, pathlib.Path(__file__).absolute())
+        returncode = 0
+        direct_result = object()
+        invariant_result = object()
+        with (
+            mock.patch.object(
+                runner,
+                '_get_result',
+                side_effect=lambda file_name: direct_result
+                if file_name == DIRECT_TEST_RESULT_FILE_NAME
+                else invariant_result,
+            ),
+            mock.patch('anyio.open_process') as mock_open_process,
+            mock.patch('anyio.create_task_group') as mock_task_group,
+        ):
+            mock_open_process.return_value.__aenter__.return_value.wait = mock.AsyncMock(return_value=returncode)
+            mock_start_soon = mock.MagicMock()
+            mock_task_group.return_value.__aenter__.return_value.start_soon = mock_start_soon
+            result = await runner.run(config=config, requirements=requirements)
+    assert result == (returncode, direct_result, invariant_result)
+    mock_open_process.assert_called_once_with(
+        [
+            str(runner.exe),
+            '--no_subdirectories',
+            'true',
+            '--test_run_directory',
+            str(runner.test_run_dir),
+            '--config',
+            str(config),
+            '--testconfig',
+            str(requirements),
+        ],
+        cwd=str(runner.exe.parent),
+    )
+    expected_calls = [
+        mock.call(_drain_stream, mock_open_process.return_value.__aenter__.return_value.stdout, __LOGGER__.info),
+        mock.call(_drain_stream, mock_open_process.return_value.__aenter__.return_value.stderr, __LOGGER__.error),
+    ]
+    assert mock_start_soon.call_count == len(expected_calls)
+    mock_start_soon.assert_has_calls(expected_calls)
+
+
+async def test_sdccc_runner_run_nonzero():
+    """Test that run returns (returncode, None, None) if the process exits with a non-zero code."""
+    config = pathlib.Path(__file__).parent.joinpath('test_version', 'configuration', 'config.toml')
+    requirements = pathlib.Path(__file__).parent.joinpath('test_version', 'configuration', 'test_configuration.toml')
+    async with anyio.TemporaryDirectory() as temp_dir:
+        runner = SdcccRunner(temp_dir, pathlib.Path(__file__).absolute())
+        returncode = int(uuid.uuid4().int & 0xFFFFFFFF)  # ensure that the return code is a 32-bit integer
+        with (
+            mock.patch('anyio.open_process') as mock_open_process,
+            mock.patch('anyio.create_task_group') as mock_task_group,
+        ):
+            mock_open_process.return_value.__aenter__.return_value.wait = mock.AsyncMock(return_value=returncode)
+            mock_start_soon = mock.MagicMock()
+            mock_task_group.return_value.__aenter__.return_value.start_soon = mock_start_soon
+            result = await runner.run(config=config, requirements=requirements)
+    assert result == (returncode, None, None)
+    mock_open_process.assert_called_once_with(
+        [
+            str(runner.exe),
+            '--no_subdirectories',
+            'true',
+            '--test_run_directory',
+            str(runner.test_run_dir),
+            '--config',
+            str(config),
+            '--testconfig',
+            str(requirements),
+        ],
+        cwd=str(runner.exe.parent),
+    )
+    expected_calls = [
+        mock.call(_drain_stream, mock_open_process.return_value.__aenter__.return_value.stdout, __LOGGER__.info),
+        mock.call(_drain_stream, mock_open_process.return_value.__aenter__.return_value.stderr, __LOGGER__.error),
+    ]
+    assert mock_start_soon.call_count == len(expected_calls)
+    mock_start_soon.assert_has_calls(expected_calls)
