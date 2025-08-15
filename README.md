@@ -56,7 +56,7 @@ async def main():
     runner = pysdccc.SdcccRunnerSync("/path/to/sdccc/result/directory")
 
     # https://github.com/Draegerwerk/SDCcc/?tab=readme-ov-file#exit-codes
-    return_code, direct_result, invariant_result = await runner.run(
+    return_code, direct_result, invariant_result = runner.run(
         config="/path/to/configuration/file.toml",
         requirements="/path/to/requirements/file.toml",
     ).result(timeout=60)  # use .result(timeout=...) to wait for the result in a synchronous way
