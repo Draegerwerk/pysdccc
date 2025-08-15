@@ -262,6 +262,18 @@ R0080=true
     assert tomllib.loads(provided_config) == loaded_config
 
 
+async def test_parameter():
+    """Test that the runner correctly loads the test parameters from the SDCcc executable's directory."""
+    run = SdcccRunner(
+        pathlib.Path().absolute(),
+        pathlib.Path(__file__).parent.joinpath('testversion/sdccc.exe').absolute(),
+    )
+    loaded_config = await run.get_test_parameter()
+    provided_config = """[TestParameter]
+Biceps547TimeInterval=5"""
+    assert tomllib.loads(provided_config) == loaded_config
+
+
 async def test_parse_result():
     """Test that the runner correctly parses the test results from the SDCcc executable's directory."""
     invariant = (
