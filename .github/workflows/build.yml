@@ -17,7 +17,7 @@ jobs:
         uses: astral-sh/setup-uv@v6
 
       - name: Install dependencies
-        uses: uv sync --dev
+        run: uv sync --dev
 
       - name: Install pre-commit
         run: uv tool install pre-commit --with pre-commit-uv --force-reinstall
