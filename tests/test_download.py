@@ -10,8 +10,10 @@ import pytest
 from pysdccc._download import (
     download,
     download_sync,
+    install,
     is_downloaded,
     is_downloaded_sync,
+    is_remote_path,
 )
 
 pytestmark = pytest.mark.anyio
@@ -60,3 +62,30 @@ async def test_is_downloaded():
         version = uuid.uuid4().hex
         mock_runner.return_value.get_version = mock.AsyncMock(return_value=version)
         assert await is_downloaded(version)
+
+
+def test_is_remote_path():
+    """Test that remote and local paths are correctly distinguished."""
+    assert is_remote_path('https://example.com/file.zip')
+    assert is_remote_path('http://example.com/file.zip')
+    assert not is_remote_path('/local/path/file.zip')
+    assert not is_remote_path('relative/path/file.zip')
+    assert not is_remote_path('file:///local/path/file.zip')
+
+
+async def test_install_remote():
+    """Test install with a remote URL delegates to download."""
+    url = f'https://{uuid.uuid4().hex}/sdccc.zip'
+    output = pathlib.Path(uuid.uuid4().hex)
+    with mock.patch('pysdccc._download.download') as mock_download:
+        await install(url, output)
+    mock_download.assert_called_once_with(str(url), output=output)
+
+
+async def test_install_local():
+    """Test install with a local path delegates to extract_zip_file."""
+    path = pathlib.Path(uuid.uuid4().hex)
+    output = pathlib.Path(uuid.uuid4().hex)
+    with mock.patch('pysdccc._download.extract_zip_file') as mock_extract:
+        await install(path, output)
+    mock_extract.assert_called_once_with(path, output)

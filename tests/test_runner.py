@@ -40,6 +40,13 @@ async def test_drain_stream():
     assert log_messages[0] == expected_message.decode(_common.ENCODING).strip()
 
 
+async def test_sdccc_runner_init_default_exe_not_found():
+    """Test that the runner raises FileNotFoundError when exe is None and SDCcc is not downloaded."""
+    with mock.patch('pysdccc._common.get_exe_path', side_effect=FileNotFoundError):
+        with pytest.raises(FileNotFoundError, match='Have you downloaded SDCcc'):
+            SdcccRunner(pathlib.Path().absolute())
+
+
 async def test_sdccc_runner_init():
     """Test that the runner is correctly initialized and raises ValueError for relative paths."""
     with pytest.raises(ValueError, match='Path to test run directory must be absolute'):

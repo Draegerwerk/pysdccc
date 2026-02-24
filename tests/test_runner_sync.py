@@ -22,6 +22,29 @@ def test_sdccc_runner_init(mock_init: mock.MagicMock):
     mock_init.assert_called_once_with(test_run_dir=test_run_dir, exe=exe)
 
 
+def test_exe_property():
+    """Test that the exe property returns the correct path."""
+    runner = SdcccRunnerSync(pathlib.Path().absolute(), pathlib.Path(__file__).absolute())
+    assert runner.exe == pathlib.Path(__file__).absolute()
+
+
+def test_test_run_dir_property():
+    """Test that the test_run_dir property returns the correct path."""
+    runner = SdcccRunnerSync(pathlib.Path().absolute(), pathlib.Path(__file__).absolute())
+    assert runner.test_run_dir == pathlib.Path().absolute()
+
+
+@mock.patch.object(SdcccRunner, 'get_test_parameter')
+def test_get_test_parameter(mock_get_test_parameter: mock.AsyncMock):
+    """Test that the runner correctly loads the test parameters."""
+    run = SdcccRunnerSync(
+        pathlib.Path().absolute(),
+        pathlib.Path(__file__).parent.joinpath('testversion/sdccc.exe').absolute(),
+    )
+    run.get_test_parameter().result()
+    mock_get_test_parameter.assert_called_once_with()
+
+
 @mock.patch.object(SdcccRunner, 'check_requirements')
 def test_sdccc_runner_check_requirements(mock_check_requirements: mock.AsyncMock):
     """Test that the runner correctly checks the requirements."""

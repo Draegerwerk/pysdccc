@@ -14,7 +14,7 @@ import pytest
 from click.testing import CliRunner
 
 import pysdccc
-from pysdccc._cli import PROXY, PATH, _download_to_stream, cli, download, sdccc
+from pysdccc._cli import PROXY, PATH, _download_to_stream, cli, download, extract_zip_file, sdccc
 
 
 def test_url_type_success():
@@ -27,10 +27,26 @@ def test_url_type_success():
 def test_url_type_failure():
     """Test the URL type with an invalid URL."""
     message = uuid.uuid4().hex
-    url = uuid.uuid4().hex
-    with mock.patch('httpx.URL', side_effect=Exception(message)), mock.patch('pysdccc._cli.URL.fail') as mock_fail:
+    url = f'https://{uuid.uuid4().hex}'
+    with mock.patch('httpx.URL', side_effect=Exception(message)), mock.patch.object(PATH, 'fail') as mock_fail:
         PATH.convert(url, None, None)
         mock_fail.assert_called_once_with(f'{url} is not a valid url: {message}', None, None)
+
+
+def test_local_path_type_success(tmp_path: pathlib.Path):
+    """Test the local path type with a valid file path."""
+    local_file = tmp_path / 'test.zip'
+    local_file.touch()
+    with mock.patch('pysdccc._cli.is_remote_path', return_value=False):
+        actual_path = PATH.convert(str(local_file), None, None)
+    assert actual_path == local_file
+
+
+def test_local_path_type_failure(tmp_path: pathlib.Path):
+    """Test the local path type with a non-existent file path."""
+    path = str(tmp_path / uuid.uuid4().hex)
+    with mock.patch('pysdccc._cli.is_remote_path', return_value=False), pytest.raises(click.BadParameter):
+        PATH.convert(path, None, None)
 
 
 def test_proxy_type_success():
@@ -98,40 +114,49 @@ def test_download_to_stream_error():
     mock_stream.assert_called_once_with('GET', url, follow_redirects=True, proxy=proxy)
 
 
-def test_download_extracts_zip(tmp_path: pathlib.Path):
-    """Test download extracts zip contents to output directory."""
+def test_download_returns_temp_file(tmp_path: pathlib.Path):
+    """Test download downloads to a temp file and returns its path."""
     url = httpx.URL('https://example.com/file.zip')
     proxy = httpx.Proxy('http://proxy:8080')
-    downloaded_zip_file = tmp_path / 'this_file_has_been_downloaded.zip'
-    output_dir = tmp_path / 'output'
-    output_dir.mkdir()
-
-    # create a zip file which acts as it is the downloaded content
-    archive_name = uuid.uuid4().hex
-    downloaded_zip_file_content = uuid.uuid4().hex
-    with zipfile.ZipFile(downloaded_zip_file, 'w') as zf:
-        zf.writestr(archive_name, downloaded_zip_file_content)
+    expected_path = str(tmp_path / 'downloaded.zip')
 
     with (
         mock.patch('tempfile.NamedTemporaryFile') as mock_tempfile,
         mock.patch('pysdccc._cli._download_to_stream') as mock_download_to_stream,
     ):
-        mock_tempfile.return_value.__enter__.return_value.name = str(downloaded_zip_file)
-        download(url, output_dir, proxy)
+        mock_tempfile.return_value.__enter__.return_value.name = expected_path
+        result = download(url, proxy)
     mock_download_to_stream.assert_called_once_with(url, mock_tempfile.return_value.__enter__(), proxy=proxy)
+    assert result == expected_path
 
-    output_file = output_dir / archive_name
-    assert output_file.read_text() == downloaded_zip_file_content
+
+def test_extract_zip_file(tmp_path: pathlib.Path):
+    """Test extract_zip_file extracts contents to output directory."""
+    zip_path = tmp_path / 'archive.zip'
+    output_dir = tmp_path / 'output'
+    output_dir.mkdir()
+    archive_name = uuid.uuid4().hex
+    archive_content = uuid.uuid4().hex
+    with zipfile.ZipFile(zip_path, 'w') as zf:
+        zf.writestr(archive_name, archive_content)
+    extract_zip_file(zip_path, output_dir)
+    assert (output_dir / archive_name).read_text() == archive_content
 
 
 def test_install_success():
     """Test the installation command."""
     runner = CliRunner()
     url = 'https://example.com/file.zip'
-    with mock.patch('pysdccc._cli.uninstall') as mock_uninstall, mock.patch('pysdccc._cli.download') as mock_download:
+    temp_file = uuid.uuid4().hex
+    with (
+        mock.patch('pysdccc._cli.uninstall') as mock_uninstall,
+        mock.patch('pysdccc._cli.download', return_value=temp_file) as mock_download,
+        mock.patch('pysdccc._cli.extract_zip_file') as mock_extract,
+    ):
         result = runner.invoke(cli, ['install', url])
     mock_uninstall.assert_called_once()
-    mock_download.assert_called_once_with(url, pysdccc.DEFAULT_STORAGE_DIRECTORY, None)
+    mock_download.assert_called_once_with(httpx.URL(url), None)
+    mock_extract.assert_called_once_with(temp_file, pysdccc.DEFAULT_STORAGE_DIRECTORY)
     assert result.exit_code == 0
 
 
@@ -148,6 +173,42 @@ def test_install_failure():
         result = runner.invoke(cli, ['install', url])
     assert result.exit_code == 1
     assert result.output == f'Error: Failed to download and extract SDCcc from {url}: {error_message}\n'
+
+
+def test_install_local_path_success(tmp_path: pathlib.Path):
+    """Test the installation command with a local zip file."""
+    runner = CliRunner()
+    local_file = tmp_path / 'sdccc.zip'
+    local_file.touch()
+    with (
+        mock.patch('pysdccc._cli.is_remote_path', return_value=False),
+        mock.patch('pysdccc._cli.uninstall') as mock_uninstall,
+        mock.patch('pysdccc._cli.extract_zip_file') as mock_extract,
+    ):
+        result = runner.invoke(cli, ['install', str(local_file)])
+    mock_uninstall.assert_called_once()
+    mock_extract.assert_called_once_with(str(local_file), pysdccc.DEFAULT_STORAGE_DIRECTORY)
+    assert result.exit_code == 0
+
+
+def test_install_extract_failure():
+    """Test the installation command when extraction fails."""
+    runner = CliRunner()
+    url = 'https://example.com/file.zip'
+    temp_file = uuid.uuid4().hex
+    error_message = uuid.uuid4().hex
+
+    def extract_side_effect(*_, **__):  # noqa: ANN002, ANN003
+        raise Exception(error_message)  # noqa: TRY002
+
+    with (
+        mock.patch('pysdccc._cli.uninstall'),
+        mock.patch('pysdccc._cli.download', return_value=temp_file),
+        mock.patch('pysdccc._cli.extract_zip_file', side_effect=extract_side_effect),
+    ):
+        result = runner.invoke(cli, ['install', url])
+    assert result.exit_code == 1
+    assert f'Failed to extract SDCcc from {url}: {error_message}' in result.output
 
 
 def test_uninstall(tmp_path: pathlib.Path):

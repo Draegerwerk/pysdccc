@@ -81,6 +81,18 @@ async def test_test_suite_from_file(mock_fromfile: mock.MagicMock):
         await TestSuite.from_file('dummy_path')
 
 
+@mock.patch('pysdccc._result_parser.junitparser.JUnitXml.fromfile')
+async def test_test_suite_from_file_fromelem_none(mock_fromfile: mock.MagicMock):
+    """Test that from_file raises ValueError when fromelem returns None."""
+    xml = JUnitXml()
+    suite = JUnitTestSuite()
+    xml.add_testsuite(suite)
+    mock_fromfile.return_value = xml
+    with mock.patch.object(TestSuite, 'fromelem', return_value=None):
+        with pytest.raises(ValueError, match='Failed to parse TestSuite from'):
+            await TestSuite.from_file('dummy_path')
+
+
 async def test_result_file_parser():
     """Test whether the test identifier and description is correctly parsed."""
     data = (
