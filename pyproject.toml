@@ -42,9 +42,9 @@ test = [
 ]
 dev = [
     { include-group = "test" },
-    "pyright>=1.1.403",
     "lxml-stubs>=0.5.1",
-    "ruff>=0.11.8",
+    "ruff>=0.15.2",
+    "ty>=0.0.18",
 ]
 
 [project.scripts]
@@ -130,3 +130,10 @@ skip_install = true # https://tox.wiki/en/latest/config.html#skip_install
 
 [tool.coverage.run]
 parallel = true # https://coverage.readthedocs.io/en/latest/config.html#run-parallel
+
+[[tool.ty.overrides]]  # https://docs.astral.sh/ty/reference/configuration/#overrides
+include = [
+    "tests/"
+]
+[tool.ty.overrides.rules]
+deprecated = "ignore"

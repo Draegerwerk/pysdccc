@@ -14,13 +14,13 @@ import pytest
 from click.testing import CliRunner
 
 import pysdccc
-from pysdccc._cli import PROXY, URL, _download_to_stream, cli, download, sdccc
+from pysdccc._cli import PROXY, PATH, _download_to_stream, cli, download, sdccc
 
 
 def test_url_type_success():
     """Test the URL type."""
     expected_url = httpx.URL('https://example.com')
-    actual_url = URL.convert(str(expected_url), None, None)
+    actual_url = PATH.convert(str(expected_url), None, None)
     assert actual_url == expected_url
 
 
@@ -29,7 +29,7 @@ def test_url_type_failure():
     message = uuid.uuid4().hex
     url = uuid.uuid4().hex
     with mock.patch('httpx.URL', side_effect=Exception(message)), mock.patch('pysdccc._cli.URL.fail') as mock_fail:
-        URL.convert(url, None, None)
+        PATH.convert(url, None, None)
         mock_fail.assert_called_once_with(f'{url} is not a valid url: {message}', None, None)
 
 

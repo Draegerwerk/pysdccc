@@ -1,16 +1,17 @@
 """Everything needed for downloading SDCcc."""
-
 import concurrent.futures
 import contextlib
 import logging
 import os
-import pathlib
 import subprocess
 import sys
+import urllib.parse
 import zipfile
 from collections.abc import AsyncGenerator
+from typing import cast
 
 import anyio.from_thread
+import anyio.to_thread
 import httpx
 
 from pysdccc import _common, _runner
@@ -21,6 +22,23 @@ else:
     from typing_extensions import deprecated
 
 logger = logging.getLogger('pysdccc.download')
+
+
+def is_remote_path(path: _common.PATH_TYPE) -> bool:
+    """Check if the given path is a remote URL."""
+    parsed = urllib.parse.urlparse(str(path))
+    return bool(parsed.scheme) and parsed.scheme.lower() != 'file'
+
+
+def _extract_zip_file_sync(zip_file_path: _common.PATH_TYPE, output: _common.PATH_TYPE):
+    """Extract the given zip file to the given output directory."""
+    with zipfile.ZipFile(zip_file_path) as f:
+        f.extractall(output)
+
+async def extract_zip_file(zip_file_path: _common.PATH_TYPE, output: _common.PATH_TYPE) -> None:
+    """Extract the given zip file to the given output directory."""
+    logger.info('Extracting SDCcc to %s.', output)
+    await anyio.to_thread.run_sync(_extract_zip_file_sync, zip_file_path, output)
 
 
 @contextlib.asynccontextmanager
@@ -58,8 +76,7 @@ async def download(
             await temporary_file.write(chunk)
     output = output or _common.DEFAULT_STORAGE_DIRECTORY
     logger.info('Extracting SDCcc to %s.', output)
-    with zipfile.ZipFile(temporary_file.name) as f:  # pyright: ignore [reportCallIssue, reportArgumentType]
-        f.extractall(output)
+    await extract_zip_file(cast('str', temporary_file.name), output)
     return _common.get_exe_path(output)
 
 
@@ -71,9 +88,25 @@ async def is_downloaded(version: str) -> bool:
     :return: True if the executable is already downloaded, False otherwise.
     """
     try:
-        return await _runner.SdcccRunner(pathlib.Path().absolute()).get_version() == version
+        return await _runner.SdcccRunner(await anyio.Path().absolute()).get_version() == version
     except (FileNotFoundError, subprocess.CalledProcessError):
         return False
+
+
+async def install(path: _common.PATH_TYPE, output: _common.PATH_TYPE | None = None) -> None:
+    """Install the SDCcc executable from the given remote or local path.
+
+    This function installs the SDCcc executable from the given path. It checks if the path is a URL or a local file
+    path and calls the appropriate function to download and extract the zip file.
+
+    :param path: The remote or local path to the SDCcc executable.
+    :param output: The path to the directory where the downloaded executable will be extracted. If None,
+    `DEFAULT_STORAGE_DIRECTORY` is used.
+    """
+    if is_remote_path(path):
+        await download(str(path), output=output or _common.DEFAULT_STORAGE_DIRECTORY)
+    else:
+        await extract_zip_file(path, output or _common.DEFAULT_STORAGE_DIRECTORY)
 
 
 @deprecated('Prefer using the async version `download` instead.')

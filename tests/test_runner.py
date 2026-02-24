@@ -370,9 +370,9 @@ async def test_sdccc_runner_run_success():
             mock.patch.object(
                 runner,
                 '_get_result',
-                side_effect=lambda file_name: direct_result
-                if file_name == DIRECT_TEST_RESULT_FILE_NAME
-                else invariant_result,
+                side_effect=lambda file_name: (
+                    direct_result if file_name == DIRECT_TEST_RESULT_FILE_NAME else invariant_result
+                ),
             ),
             mock.patch('anyio.open_process') as mock_open_process,
             mock.patch('anyio.create_task_group') as mock_task_group,
