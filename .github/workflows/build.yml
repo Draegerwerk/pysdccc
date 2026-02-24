@@ -94,7 +94,7 @@ jobs:
         run: uv pip install ${{ matrix.distribution }}
 
       - name: Install test dependencies
-        run: uv sync --group test --frozen
+        run: uv sync --group test
 
       - name: Detect suffix on ubuntu
         if: ${{ matrix.os == 'ubuntu-latest' }}
