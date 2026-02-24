@@ -61,9 +61,7 @@ async def test_sdccc_runner_init():
         SdcccRunner(abs_cwd, abs_cwd)
     with pytest.raises(
         ValueError,
-        match=re.escape(
-            f'Test run directory "{abs_file}" is not a directory or does not exist'
-        ),
+        match=re.escape(f'Test run directory "{abs_file}" is not a directory or does not exist'),
     ):
         SdcccRunner(abs_file, abs_file)
     runner = SdcccRunner(abs_cwd, pathlib.Path(__file__))
