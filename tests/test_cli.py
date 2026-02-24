@@ -1,5 +1,6 @@
 """tests for the _cli module."""
 
+import importlib
 import pathlib
 import random
 import subprocess
@@ -14,7 +15,21 @@ import pytest
 from click.testing import CliRunner
 
 import pysdccc
+import pysdccc._cli
 from pysdccc._cli import PATH, PROXY, _download_to_stream, cli, download, extract_zip_file, sdccc
+
+
+def test_import_error_without_click():
+    """Test that importing _cli without click raises ImportError."""
+    saved_module = sys.modules.pop('pysdccc._cli')
+    try:
+        with (
+            mock.patch.dict(sys.modules, {'click': None}),
+            pytest.raises(ImportError, match='Cli not installed'),
+        ):
+            importlib.import_module('pysdccc._cli')
+    finally:
+        sys.modules['pysdccc._cli'] = saved_module
 
 
 def test_url_type_success():
