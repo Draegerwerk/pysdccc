@@ -1,4 +1,5 @@
 """Implements the synchronous runner for the SDCcc executable."""
+from collections.abc import Mapping
 
 import concurrent.futures
 import functools
@@ -43,7 +44,7 @@ class SdcccRunnerSync:
         """Get the path to the test run directory."""
         return pathlib.Path(self.__async_runner.test_run_dir)
 
-    def get_config(self) -> concurrent.futures.Future[dict[str, typing.Any]]:
+    def get_config(self) -> concurrent.futures.Future[Mapping[str, typing.Any]]:
         """Get the default configuration.
 
         This method loads the default configuration from the SDCcc executable's directory.
@@ -53,7 +54,7 @@ class SdcccRunnerSync:
         with self.__portal_provider as portal:
             return portal.start_task_soon(self.__async_runner.get_config)
 
-    def get_requirements(self) -> concurrent.futures.Future[dict[str, dict[str, bool]]]:
+    def get_requirements(self) -> concurrent.futures.Future[Mapping[str, Mapping[str, bool]]]:
         """Get the default requirements.
 
         This method loads the default requirements from the SDCcc executable's directory.
@@ -63,7 +64,7 @@ class SdcccRunnerSync:
         with self.__portal_provider as portal:
             return portal.start_task_soon(self.__async_runner.get_requirements)
 
-    def get_test_parameter(self) -> concurrent.futures.Future[dict[str, typing.Any]]:
+    def get_test_parameter(self) -> concurrent.futures.Future[Mapping[str, typing.Any]]:
         """Get the default test parameter.
 
         This method loads the default test parameters from the SDCcc executable's directory.
