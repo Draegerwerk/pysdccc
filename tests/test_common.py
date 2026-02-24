@@ -83,7 +83,7 @@ def test_raise_not_implemented_error():
         pass
 
     with pytest.raises(TypeError):
-        _common.build_command(key=CustomType())  # pyright: ignore [reportArgumentType]
+        _common.build_command(key=CustomType())  # ty:ignore[invalid-argument-type]
 
 
 def test_get_exe_path():

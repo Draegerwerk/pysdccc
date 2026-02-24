@@ -4,7 +4,7 @@ import logging
 import pathlib
 import tomllib
 import typing
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 
 import anyio
 from anyio.abc import ByteReceiveStream
@@ -135,7 +135,7 @@ class SdcccRunner:
         config: anyio.Path,
         requirements: anyio.Path,
         **kwargs: _common.CMD_TYPE,
-    ) -> list[str]:
+    ) -> Sequence[str]:
         if not config.is_absolute():
             msg = 'Path to config file must be absolute'
             raise ValueError(msg)

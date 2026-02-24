@@ -4,7 +4,7 @@ import locale
 import os
 import pathlib
 import sys
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Sequence
 
 import anyio
 
@@ -19,7 +19,7 @@ SINGLE_CMD_TYPE = str | int | bool | pathlib.Path | anyio.Path
 CMD_TYPE = SINGLE_CMD_TYPE | Iterable[str | int | pathlib.Path | anyio.Path] | None
 
 
-def build_command(*args: str, **kwargs: CMD_TYPE) -> list[str]:
+def build_command(*args: str, **kwargs: CMD_TYPE) -> Sequence[str]:
     """Build the command string from the arguments and keyword arguments."""
     command = list(args)
     for arg, value in kwargs.items():

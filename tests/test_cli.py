@@ -14,7 +14,7 @@ import pytest
 from click.testing import CliRunner
 
 import pysdccc
-from pysdccc._cli import PROXY, PATH, _download_to_stream, cli, download, extract_zip_file, sdccc
+from pysdccc._cli import PATH, PROXY, _download_to_stream, cli, download, extract_zip_file, sdccc
 
 
 def test_url_type_success():

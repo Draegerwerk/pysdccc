@@ -1,4 +1,5 @@
 """Everything needed for downloading SDCcc."""
+
 import concurrent.futures
 import contextlib
 import logging
@@ -34,6 +35,7 @@ def _extract_zip_file_sync(zip_file_path: _common.PATH_TYPE, output: _common.PAT
     """Extract the given zip file to the given output directory."""
     with zipfile.ZipFile(zip_file_path) as f:
         f.extractall(output)
+
 
 async def extract_zip_file(zip_file_path: _common.PATH_TYPE, output: _common.PATH_TYPE) -> None:
     """Extract the given zip file to the given output directory."""

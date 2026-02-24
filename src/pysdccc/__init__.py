@@ -8,8 +8,6 @@ from pysdccc._runner_sync import (
     SdcccRunnerSync,
 )
 
-__version__ = '0.0.0'
-
 __all__ = [
     'DEFAULT_STORAGE_DIRECTORY',
     'SdcccRunner',
