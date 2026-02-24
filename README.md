@@ -44,14 +44,12 @@ async def main():
 If you look for a synchronous version. Please note this is deprecated. The async methods are the preferred way.
 
 ```python
-import pathlib
-
 import pysdccc
 
 
-async def main():
-    if not pysdccc.is_downloaded_sync("my-specific-version"):
-        pysdccc.download_sync("https://url/to/sdccc.zip")
+def main():
+    if not pysdccc.is_downloaded_sync("my-specific-version").result():
+        pysdccc.download_sync("https://url/to/sdccc.zip").result()
 
     runner = pysdccc.SdcccRunnerSync("/path/to/sdccc/result/directory")
 
