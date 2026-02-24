@@ -38,7 +38,7 @@ repos:
         language: python
         types: [ python ]
         pass_filenames: true
-        additional_dependencies: [ pytest >= 8.4.1, anyio >= 4.7.0, junitparser >= 4, httpx >= 0.28.0, click >= 8.0 ]
+        additional_dependencies: [ ty >= 0.0.18, pytest >= 8.4.1, anyio >= 4.7.0, junitparser >= 4, httpx >= 0.28.0, click >= 8.0 ]
 
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: v1.10.0
