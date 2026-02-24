@@ -4,7 +4,7 @@ import logging
 import pathlib
 import tomllib
 import typing
-from collections.abc import Callable, Sequence, Mapping
+from collections.abc import Callable, Mapping, Sequence
 
 import anyio
 from anyio.abc import ByteReceiveStream

@@ -1,11 +1,11 @@
 """Implements the synchronous runner for the SDCcc executable."""
-from collections.abc import Mapping
 
 import concurrent.futures
 import functools
 import pathlib
 import sys
 import typing
+from collections.abc import Mapping
 
 import anyio
 import anyio.from_thread
