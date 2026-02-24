@@ -42,7 +42,6 @@ test = [
 ]
 dev = [
     { include-group = "test" },
-    "lxml-stubs>=0.5.1",
     "ruff>=0.15.2",
     "ty>=0.0.18",
 ]

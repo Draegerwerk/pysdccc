@@ -8,7 +8,7 @@ repos:
     rev: v1.38.0
     hooks:
       - id: yamllint
-        args: ['-d {extends: relaxed, rules: {line-length: disable, new-lines: { type: unix }}}', '-s']
+        args: [ '-d {extends: relaxed, rules: {line-length: disable, new-lines: { type: unix }}}', '-s' ]
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
@@ -27,7 +27,7 @@ repos:
     rev: v0.15.2
     hooks:
       - id: ruff-check
-        args: [--fix, --show-fixes]
+        args: [ --fix, --show-fixes ]
       - id: ruff-format
 
   - repo: local  # https://github.com/astral-sh/ty/issues/269
@@ -36,6 +36,9 @@ repos:
         name: ty check
         entry: ty check .
         language: python
+        types: [ python ]
+        pass_filenames: true
+        additional_dependencies: [ pytest >= 8.4.1, anyio >= 4.7.0, junitparser >= 4, httpx >= 0.28.0, click >= 8.0 ]
 
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: v1.10.0
