@@ -38,9 +38,6 @@ jobs:
         uses: astral-sh/setup-uv@v6
       - run: uv venv
 
-      - name: Setup hatch
-        run: uv pip install hatch
-
       - name: Set new version
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
@@ -69,7 +66,7 @@ jobs:
     strategy:
       matrix:
         python-version: [ "3.11", "3.12", "3.13", "3.14" ]
-        os: [ ubuntu-latest, windows-latest ]
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
         distribution: [ "${{ needs.build.outputs.WHL }}",
                         "${{ needs.build.outputs.TARGZ }}" ]
     runs-on: ${{ matrix.os }}

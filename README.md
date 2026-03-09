@@ -167,6 +167,8 @@ Be aware that no further processing of the SDCcc process output is done. Dependi
 
 There exists a cli wrapper for the SDCcc executable. If `pysdccc[cli]` is installed, `sdccc` can be used to execute arbitrary SDCcc commands, e.g. `sdccc --version`. More information can be found [here](https://github.com/draegerwerk/sdccc?tab=readme-ov-file#running-sdccc).
 
+Also, you can manually install and uninstall sdccc versions using the cli, e.g. `uv run pysdccc install https://url/to/sdccc.zip` or from a local path `uv run pysdccc install path/to/sdccc.zip`.
+
 ## Notices
 
 `pysdccc` is not intended for use in medical products, clinical trials, clinical studies, or in clinical routine.

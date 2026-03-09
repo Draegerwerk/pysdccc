@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `is_remote_path` utility function to distinguish URLs from local file paths
 - CLI `install` command now accepts local zip file paths in addition to URLs
 - exported `install` and `extract_zip_file` from the public API
+- added macos pipeline to CI
 
 ### Changed
 

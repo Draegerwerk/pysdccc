@@ -4,6 +4,7 @@ import locale
 import os
 import pathlib
 import sys
+import urllib.parse
 from collections.abc import Iterable, Mapping, Sequence
 
 import anyio
@@ -84,3 +85,16 @@ def check_requirements(provided: Mapping[str, Mapping[str, bool]], available: Ma
             if req not in available_enabled:
                 msg = f'Requirement id "{standard}.{req}" not found'
                 raise KeyError(msg)
+
+
+def is_remote_path(path: PATH_TYPE) -> bool:
+    """Check if the given path is a remote URL.
+
+    :param path: The path to be checked.
+    :return: True if the path is a remote URL, False otherwise.
+    """
+    path = pathlib.Path(path)
+    if path.exists() or path.drive:
+        return False
+    parsed = urllib.parse.urlparse(str(path))
+    return bool(parsed.scheme) and parsed.scheme.lower() != 'file'

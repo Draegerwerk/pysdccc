@@ -146,3 +146,14 @@ def test_check_requirements(
             _common.check_requirements(provided, available)
     else:
         _common.check_requirements(provided, available)
+
+
+def test_is_remote_path():
+    """Test that remote and local paths are correctly distinguished."""
+    assert _common.is_remote_path('https://example.com/file.zip')
+    assert _common.is_remote_path('http://example.com/file.zip')
+    assert not _common.is_remote_path('/local/path/file.zip')
+    assert not _common.is_remote_path('relative/path/file.zip')
+    assert not _common.is_remote_path('file:///local/path/file.zip')
+    assert not _common.is_remote_path('C:\\test\\file.zip')
+    assert not _common.is_remote_path('C:/test/file.zip')

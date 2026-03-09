@@ -4,6 +4,7 @@ import concurrent.futures
 import contextlib
 import logging
 import os
+import pathlib
 import subprocess
 import sys
 import urllib.parse
@@ -25,20 +26,18 @@ else:
 logger = logging.getLogger('pysdccc.download')
 
 
-def is_remote_path(path: _common.PATH_TYPE) -> bool:
-    """Check if the given path is a remote URL."""
-    parsed = urllib.parse.urlparse(str(path))
-    return bool(parsed.scheme) and parsed.scheme.lower() != 'file'
-
-
-def _extract_zip_file_sync(zip_file_path: _common.PATH_TYPE, output: _common.PATH_TYPE):
+def _extract_zip_file_sync(zip_file_path: _common.PATH_TYPE, output: _common.PATH_TYPE) -> None:
     """Extract the given zip file to the given output directory."""
     with zipfile.ZipFile(zip_file_path) as f:
         f.extractall(output)
 
 
 async def extract_zip_file(zip_file_path: _common.PATH_TYPE, output: _common.PATH_TYPE) -> None:
-    """Extract the given zip file to the given output directory."""
+    """Extract the given zip file to the given output directory.
+
+    :param zip_file_path: The path to the zip file to be extracted.
+    :param output: The path to the directory where the zip file will be extracted.
+    """
     logger.info('Extracting SDCcc to %s.', output)
     await anyio.to_thread.run_sync(_extract_zip_file_sync, zip_file_path, output)
 
@@ -105,7 +104,7 @@ async def install(path: _common.PATH_TYPE, output: _common.PATH_TYPE | None = No
     :param output: The path to the directory where the downloaded executable will be extracted. If None,
     `DEFAULT_STORAGE_DIRECTORY` is used.
     """
-    if is_remote_path(path):
+    if _common.is_remote_path(path):
         await download(str(path), output=output or _common.DEFAULT_STORAGE_DIRECTORY)
     else:
         await extract_zip_file(path, output or _common.DEFAULT_STORAGE_DIRECTORY)

@@ -12,7 +12,6 @@ import zipfile
 import httpx
 
 from pysdccc import _common
-from pysdccc._download import is_remote_path
 
 try:
     import click
@@ -26,8 +25,8 @@ class LocalOrRemotePath(click.ParamType):
     name = 'path'
 
     def convert(self, value: str, param: click.Parameter | None, ctx: click.Context | None) -> httpx.URL | pathlib.Path:
-        """Convert value to url."""
-        if is_remote_path(value):
+        """Convert value to url or filepath."""
+        if _common.is_remote_path(value):
             try:
                 return httpx.URL(value)
             except Exception as e:  # noqa: BLE001
@@ -86,12 +85,10 @@ def extract_zip_file(zip_file: _common.PATH_TYPE, output: _common.PATH_TYPE):
             f.extract(member, output)
 
 
-def download(url: httpx.URL, proxy: httpx.Proxy | None = None) -> str:
-    """Download and extract the executable from a url."""
+def download(url: httpx.URL, stream: io.IOBase, proxy: httpx.Proxy | None = None):
+    """Download the executable from a url to a given stream."""
     click.echo(f'Downloading SDCcc from {url}.')
-    with tempfile.NamedTemporaryFile('wb', suffix='.zip', delete=False) as temporary_file:
-        _download_to_stream(url, temporary_file, proxy=proxy)  # type: ignore[arg-type]
-    return temporary_file.name
+    _download_to_stream(url, stream, proxy=proxy)
 
 
 @click.group(help='Manage SDCcc installation.')
@@ -101,40 +98,39 @@ def cli():
 
 
 @cli.command(
-    short_help='Install the SDCcc executable from the specified URL. Releases can be found at https://github.com/Draegerwerk/SDCcc/releases.',
+    short_help='Install the SDCcc executable from the specified local or remote path. Releases can be found at https://github.com/Draegerwerk/SDCcc/releases.',
 )
 @click.argument('path', type=PATH)
 @click.option('--proxy', help='Proxy server to use for the download.', type=PROXY)
 @click.pass_context
 def install(ctx: click.Context, path: httpx.URL | pathlib.Path, proxy: httpx.Proxy | None):
-    """Download the specified version from the default URL to a temporary directory.
-
-    This function downloads the SDCcc executable from the given URL to a temporary directory.
-    It optionally uses a proxy and a specified timeout for the download operation.
-    The downloaded file is extracted to a local path determined by the version string in the URL.
+    """Install the specified version from the local or remote path.
 
     :param ctx: context from click
-    :param path: The parsed URL from which to download the executable or a local path from which the file is extracted.
+    :param path: The URL from which to download the executable or a local path from which the file is extracted.
     :param proxy: Optional proxy to be used for the download.
     """
     ctx.invoke(uninstall)
-    if isinstance(path, httpx.URL):
-        try:
-            file_to_be_extracted = download(path, proxy)
-        except Exception as e:
-            msg = f'Failed to download and extract SDCcc from {path}: {e}'
-            raise click.ClickException(msg) from e
-    elif isinstance(path, pathlib.Path):
-        file_to_be_extracted = str(path)
-    else:
-        msg = f'Unexpected type of path: {type(path)}'
-        raise TypeError(msg)
+    with contextlib.ExitStack() as stack:
+        if isinstance(path, httpx.URL):
+            stream = stack.enter_context(tempfile.NamedTemporaryFile('wb', suffix='.zip'))
+            file_to_be_extracted = stream.name
+            try:
+                download(path, stream, proxy)  # ty:ignore[invalid-argument-type]
+            except Exception as e:
+                msg = f'Failed to download and extract SDCcc from {path}: {e}'
+                raise click.ClickException(msg) from e
+        elif isinstance(path, pathlib.Path):
+            file_to_be_extracted = str(path)
+        else:
+            msg = f'Unexpected type of path: {type(path)}'
+            raise TypeError(msg)
 
-    try:
-        extract_zip_file(file_to_be_extracted, _common.DEFAULT_STORAGE_DIRECTORY)
-    except Exception as e:
-        msg = f'Failed to extract SDCcc from {path}: {e}'
-        raise click.ClickException(msg) from e
+        try:
+            extract_zip_file(file_to_be_extracted, _common.DEFAULT_STORAGE_DIRECTORY)
+        except Exception as e:
+            msg = f'Failed to extract SDCcc from {path}: {e}'
+            raise click.ClickException(msg) from e
 
 
 @cli.command(short_help='Uninstall the SDCcc executable by removing the directory.')

@@ -52,16 +52,16 @@ def test_local_path_type_success(tmp_path: pathlib.Path):
     """Test the local path type with a valid file path."""
     local_file = tmp_path / 'test.zip'
     local_file.touch()
-    with mock.patch('pysdccc._cli.is_remote_path', return_value=False):
-        actual_path = PATH.convert(str(local_file), None, None)
+    actual_path = PATH.convert(str(local_file), None, None)
     assert actual_path == local_file
 
 
 def test_local_path_type_failure(tmp_path: pathlib.Path):
     """Test the local path type with a non-existent file path."""
-    path = str(tmp_path / uuid.uuid4().hex)
-    with mock.patch('pysdccc._cli.is_remote_path', return_value=False), pytest.raises(click.BadParameter):
-        PATH.convert(path, None, None)
+    path = tmp_path / uuid.uuid4().hex
+    assert not path.is_file()
+    with pytest.raises(click.BadParameter):
+        PATH.convert(str(path), None, None)
 
 
 def test_proxy_type_success():
@@ -129,20 +129,15 @@ def test_download_to_stream_error():
     mock_stream.assert_called_once_with('GET', url, follow_redirects=True, proxy=proxy)
 
 
-def test_download_returns_temp_file(tmp_path: pathlib.Path):
-    """Test download downloads to a temp file and returns its path."""
+def test_download_calls_download_to_stream():
+    """Test download delegates to _download_to_stream with correct arguments."""
     url = httpx.URL('https://example.com/file.zip')
     proxy = httpx.Proxy('http://proxy:8080')
-    expected_path = str(tmp_path / 'downloaded.zip')
+    stream = mock.MagicMock()
 
-    with (
-        mock.patch('tempfile.NamedTemporaryFile') as mock_tempfile,
-        mock.patch('pysdccc._cli._download_to_stream') as mock_download_to_stream,
-    ):
-        mock_tempfile.return_value.__enter__.return_value.name = expected_path
-        result = download(url, proxy)
-    mock_download_to_stream.assert_called_once_with(url, mock_tempfile.return_value.__enter__(), proxy=proxy)
-    assert result == expected_path
+    with mock.patch('pysdccc._cli._download_to_stream') as mock_download_to_stream:
+        download(url, stream, proxy)
+    mock_download_to_stream.assert_called_once_with(url, stream, proxy=proxy)
 
 
 def test_extract_zip_file(tmp_path: pathlib.Path):
@@ -162,16 +157,21 @@ def test_install_success():
     """Test the installation command."""
     runner = CliRunner()
     url = 'https://example.com/file.zip'
-    temp_file = uuid.uuid4().hex
+    temp_file_name = uuid.uuid4().hex
+    mock_stream = mock.MagicMock()
+    mock_stream.name = temp_file_name
     with (
         mock.patch('pysdccc._cli.uninstall') as mock_uninstall,
-        mock.patch('pysdccc._cli.download', return_value=temp_file) as mock_download,
+        mock.patch('pysdccc._cli.download') as mock_download,
         mock.patch('pysdccc._cli.extract_zip_file') as mock_extract,
+        mock.patch('pysdccc._cli.tempfile.NamedTemporaryFile', return_value=mock_stream),
     ):
+        mock_stream.__enter__ = mock.MagicMock(return_value=mock_stream)
+        mock_stream.__exit__ = mock.MagicMock(return_value=False)
         result = runner.invoke(cli, ['install', url])
     mock_uninstall.assert_called_once()
-    mock_download.assert_called_once_with(httpx.URL(url), None)
-    mock_extract.assert_called_once_with(temp_file, pysdccc.DEFAULT_STORAGE_DIRECTORY)
+    mock_download.assert_called_once_with(httpx.URL(url), mock_stream, None)
+    mock_extract.assert_called_once_with(temp_file_name, pysdccc.DEFAULT_STORAGE_DIRECTORY)
     assert result.exit_code == 0
 
 
