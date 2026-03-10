@@ -4,7 +4,6 @@ import locale
 import os
 import pathlib
 import sys
-import urllib.parse
 from collections.abc import Iterable, Mapping, Sequence
 
 import anyio
@@ -93,8 +92,5 @@ def is_remote_path(path: PATH_TYPE) -> bool:
     :param path: The path to be checked.
     :return: True if the path is a remote URL, False otherwise.
     """
-    path = pathlib.Path(path)
-    if path.exists() or path.drive:
-        return False
-    parsed = urllib.parse.urlparse(str(path))
-    return bool(parsed.scheme) and parsed.scheme.lower() != 'file'
+    as_lower_path = str(path).lower()
+    return as_lower_path.startswith(('http://', 'https://'))
