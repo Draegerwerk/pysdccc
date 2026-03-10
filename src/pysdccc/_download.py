@@ -4,10 +4,8 @@ import concurrent.futures
 import contextlib
 import logging
 import os
-import pathlib
 import subprocess
 import sys
-import urllib.parse
 import zipfile
 from collections.abc import AsyncGenerator
 from typing import cast
