@@ -196,7 +196,7 @@ def test_install_local_path_success(tmp_path: pathlib.Path):
     local_file = tmp_path / 'sdccc.zip'
     local_file.touch()
     with (
-        mock.patch('pysdccc._cli.is_remote_path', return_value=False),
+        mock.patch('pysdccc._common.is_remote_path', return_value=False),
         mock.patch('pysdccc._cli.uninstall') as mock_uninstall,
         mock.patch('pysdccc._cli.extract_zip_file') as mock_extract,
     ):
