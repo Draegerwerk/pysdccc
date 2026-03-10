@@ -187,7 +187,7 @@ def test_install_failure():
     with mock.patch('pysdccc._cli.uninstall'), mock.patch('pysdccc._cli.download', side_effect=side_effect):
         result = runner.invoke(cli, ['install', url])
     assert result.exit_code == 1
-    assert result.output == f'Error: Failed to download and extract SDCcc from {url}: {error_message}\n'
+    assert result.output == f'Error: Failed to download SDCcc from {url}: {error_message}\n'
 
 
 def test_install_local_path_success(tmp_path: pathlib.Path):

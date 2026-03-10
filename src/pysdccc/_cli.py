@@ -111,26 +111,31 @@ def install(ctx: click.Context, path: httpx.URL | pathlib.Path, proxy: httpx.Pro
     :param proxy: Optional proxy to be used for the download.
     """
     ctx.invoke(uninstall)
-    with contextlib.ExitStack() as stack:
-        if isinstance(path, httpx.URL):
-            stream = stack.enter_context(tempfile.NamedTemporaryFile('wb', suffix='.zip'))
-            file_to_be_extracted = stream.name
-            try:
-                download(path, stream, proxy)  # ty:ignore[invalid-argument-type]
-            except Exception as e:
-                msg = f'Failed to download and extract SDCcc from {path}: {e}'
-                raise click.ClickException(msg) from e
-        elif isinstance(path, pathlib.Path):
-            file_to_be_extracted = str(path)
-        else:
-            msg = f'Unexpected type of path: {type(path)}'
-            raise TypeError(msg)
-
+    if isinstance(path, httpx.URL):
         try:
-            extract_zip_file(file_to_be_extracted, _common.DEFAULT_STORAGE_DIRECTORY)
+            with tempfile.NamedTemporaryFile('wb', suffix='.zip', delete=False) as stream:
+                download(path, stream, proxy)  # ty:ignore[invalid-argument-type]
+            file_to_be_extracted = stream.name
         except Exception as e:
-            msg = f'Failed to extract SDCcc from {path}: {e}'
+            with contextlib.suppress(OSError):
+                pathlib.Path(stream.name).unlink()
+            msg = f'Failed to download SDCcc from {path}: {e}'
             raise click.ClickException(msg) from e
+    elif isinstance(path, pathlib.Path):
+        file_to_be_extracted = str(path)
+    else:
+        msg = f'Unexpected type of path: {type(path)}'
+        raise TypeError(msg)
+
+    try:
+        extract_zip_file(file_to_be_extracted, _common.DEFAULT_STORAGE_DIRECTORY)
+    except Exception as e:
+        msg = f'Failed to extract SDCcc from {path}: {e}'
+        raise click.ClickException(msg) from e
+    finally:
+        if isinstance(path, httpx.URL):
+            with contextlib.suppress(OSError):
+                pathlib.Path(file_to_be_extracted).unlink()
 
 
 @cli.command(short_help='Uninstall the SDCcc executable by removing the directory.')
