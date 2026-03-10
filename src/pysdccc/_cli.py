@@ -97,9 +97,7 @@ def cli():
     pass
 
 
-@cli.command(
-    short_help='Install the SDCcc executable from the specified local or remote path. Releases can be found at https://github.com/Draegerwerk/SDCcc/releases.',
-)
+@cli.command(short_help='Install the SDCcc executable from the specified local or remote path.')
 @click.argument('path', type=PATH)
 @click.option('--proxy', help='Proxy server to use for the download.', type=PROXY)
 @click.pass_context
