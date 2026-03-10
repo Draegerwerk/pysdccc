@@ -4,7 +4,7 @@ import locale
 import os
 import pathlib
 import sys
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Sequence
 
 import anyio
 
@@ -19,7 +19,7 @@ SINGLE_CMD_TYPE = str | int | bool | pathlib.Path | anyio.Path
 CMD_TYPE = SINGLE_CMD_TYPE | Iterable[str | int | pathlib.Path | anyio.Path] | None
 
 
-def build_command(*args: str, **kwargs: CMD_TYPE) -> list[str]:
+def build_command(*args: str, **kwargs: CMD_TYPE) -> Sequence[str]:
     """Build the command string from the arguments and keyword arguments."""
     command = list(args)
     for arg, value in kwargs.items():
@@ -84,3 +84,13 @@ def check_requirements(provided: Mapping[str, Mapping[str, bool]], available: Ma
             if req not in available_enabled:
                 msg = f'Requirement id "{standard}.{req}" not found'
                 raise KeyError(msg)
+
+
+def is_remote_path(path: PATH_TYPE) -> bool:
+    """Check if the given path is a remote URL.
+
+    :param path: The path to be checked.
+    :return: True if the path is a remote URL, False otherwise.
+    """
+    as_lower_path = str(path).lower()
+    return as_lower_path.startswith(('http://', 'https://'))

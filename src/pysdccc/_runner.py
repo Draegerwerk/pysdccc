@@ -4,7 +4,7 @@ import logging
 import pathlib
 import tomllib
 import typing
-from collections.abc import Callable
+from collections.abc import Callable, Mapping, Sequence
 
 import anyio
 from anyio.abc import ByteReceiveStream
@@ -70,7 +70,7 @@ class SdcccRunner:
         """Get the path to the test run directory."""
         return anyio.Path(self._test_run_dir)
 
-    async def get_config(self) -> dict[str, typing.Any]:
+    async def get_config(self) -> Mapping[str, typing.Any]:
         """Get the default configuration.
 
         This method loads the default configuration from the SDCcc executable's directory.
@@ -79,7 +79,7 @@ class SdcccRunner:
         """
         return tomllib.loads(await self.exe.parent.joinpath('configuration').joinpath('config.toml').read_text())
 
-    async def get_requirements(self) -> dict[str, dict[str, bool]]:
+    async def get_requirements(self) -> Mapping[str, Mapping[str, bool]]:
         """Get the default requirements.
 
         This method loads the default requirements from the SDCcc executable's directory.
@@ -90,7 +90,7 @@ class SdcccRunner:
             await self.exe.parent.joinpath('configuration').joinpath('test_configuration.toml').read_text()
         )
 
-    async def get_test_parameter(self) -> dict[str, typing.Any]:
+    async def get_test_parameter(self) -> Mapping[str, typing.Any]:
         """Get the default test parameter.
 
         This method loads the default test parameters from the SDCcc executable's directory.
@@ -135,7 +135,7 @@ class SdcccRunner:
         config: anyio.Path,
         requirements: anyio.Path,
         **kwargs: _common.CMD_TYPE,
-    ) -> list[str]:
+    ) -> Sequence[str]:
         if not config.is_absolute():
             msg = 'Path to config file must be absolute'
             raise ValueError(msg)

@@ -33,29 +33,38 @@ async def test_drain_stream():
         log_messages.append(message)
 
     async with anyio.create_task_group() as tg:
-        tg.start_soon(_drain_stream, receive_stream, mock_log)  # pyright: ignore[reportArgumentType]
+        tg.start_soon(_drain_stream, receive_stream, mock_log)
         async with send_stream:
             await send_stream.send(expected_message)
     assert len(log_messages) == 1
     assert log_messages[0] == expected_message.decode(_common.ENCODING).strip()
 
 
+async def test_sdccc_runner_init_default_exe_not_found():
+    """Test that the runner raises FileNotFoundError when exe is None and SDCcc is not downloaded."""
+    with (
+        mock.patch('pysdccc._common.get_exe_path', side_effect=FileNotFoundError),
+        pytest.raises(FileNotFoundError, match='Have you downloaded SDCcc'),
+    ):
+        SdcccRunner(await anyio.Path().absolute())
+
+
 async def test_sdccc_runner_init():
     """Test that the runner is correctly initialized and raises ValueError for relative paths."""
+    abs_cwd = await anyio.Path().absolute()
+    abs_file = await anyio.Path(__file__).absolute()
     with pytest.raises(ValueError, match='Path to test run directory must be absolute'):
         SdcccRunner(pathlib.Path(), pathlib.Path(__file__))
     with pytest.raises(ValueError, match='Path to executable must be absolute'):
-        SdcccRunner(pathlib.Path().absolute(), pathlib.Path())
+        SdcccRunner(abs_cwd, pathlib.Path())
     with pytest.raises(FileNotFoundError, match=f'No executable found under {pathlib.Path()}'):
-        SdcccRunner(pathlib.Path().absolute(), pathlib.Path().absolute())
+        SdcccRunner(abs_cwd, abs_cwd)
     with pytest.raises(
         ValueError,
-        match=re.escape(
-            f'Test run directory "{pathlib.Path(__file__).absolute()}" is not a directory or does not exist'
-        ),
+        match=re.escape(f'Test run directory "{abs_file}" is not a directory or does not exist'),
     ):
-        SdcccRunner(pathlib.Path(__file__).absolute(), pathlib.Path(__file__).absolute())
-    runner = SdcccRunner(pathlib.Path().absolute(), pathlib.Path(__file__))
+        SdcccRunner(abs_file, abs_file)
+    runner = SdcccRunner(abs_cwd, pathlib.Path(__file__))
     assert runner.exe == await anyio.Path(__file__).absolute()
     assert runner.test_run_dir == await anyio.Path().absolute()
     with pytest.raises(ValueError, match='Path to requirements file must be absolute'):
@@ -79,7 +88,7 @@ async def test_sdccc_runner_check_requirements(mock_get_requirements: mock.Async
         'another_test': {'test3': True, 'test4': False},
     }
     runner = SdcccRunner(
-        pathlib.Path().absolute(),
+        await anyio.Path().absolute(),
         pathlib.Path(__file__).parent.joinpath('testversion').joinpath('sdccc.exe').absolute(),
     )
     with (
@@ -93,7 +102,7 @@ async def test_sdccc_runner_check_requirements(mock_get_requirements: mock.Async
 async def test_configuration():
     """Test that the runner correctly loads the configuration from the SDCcc executable's directory."""
     run = SdcccRunner(
-        pathlib.Path().absolute(),
+        await anyio.Path().absolute(),
         pathlib.Path(__file__).parent.joinpath('testversion/sdccc.exe').absolute(),
     )
     loaded_config = await run.get_config()
@@ -151,7 +160,7 @@ Biceps547TimeInterval=5
 async def test_requirements():
     """Test that the runner correctly loads the requirements from the SDCcc executable's directory."""
     run = SdcccRunner(
-        pathlib.Path().absolute(),
+        await anyio.Path().absolute(),
         pathlib.Path(__file__).parent.joinpath('testversion/sdccc.exe').absolute(),
     )
     loaded_config = await run.get_requirements()
@@ -265,7 +274,7 @@ R0080=true
 async def test_parameter():
     """Test that the runner correctly loads the test parameters from the SDCcc executable's directory."""
     run = SdcccRunner(
-        pathlib.Path().absolute(),
+        await anyio.Path().absolute(),
         pathlib.Path(__file__).parent.joinpath('testversion/sdccc.exe').absolute(),
     )
     loaded_config = await run.get_test_parameter()
@@ -309,7 +318,8 @@ async def test_parse_result():
         ('SDCccTestRunValidity', 'SDCcc Test Run Validity'),
     )
     run = SdcccRunner(
-        pathlib.Path(__file__).parent.joinpath('sdccc_example_results').absolute(), pathlib.Path(__file__).absolute()
+        pathlib.Path(__file__).parent.joinpath('sdccc_example_results').absolute(),
+        await anyio.Path(__file__).absolute(),
     )
     direct_results = run._get_result(DIRECT_TEST_RESULT_FILE_NAME)  # noqa: SLF001
     invariant_results = run._get_result(INVARIANT_TEST_RESULT_FILE_NAME)  # noqa: SLF001
@@ -324,7 +334,7 @@ async def test_parse_result():
 
 async def test_sdccc_runner_get_version_expected():
     """Test that the runner correctly retrieves the version of the SDCcc executable."""
-    runner = SdcccRunner(pathlib.Path().absolute(), pathlib.Path(__file__).absolute())
+    runner = SdcccRunner(await anyio.Path().absolute(), await anyio.Path(__file__).absolute())
     version = uuid.uuid4().hex
     with mock.patch('anyio.run_process') as mock_run_process:
         mock_run_process.return_value = subprocess.CompletedProcess(
@@ -335,7 +345,7 @@ async def test_sdccc_runner_get_version_expected():
 
 async def test_sdccc_runner_get_version_error():
     """Test that the runner correctly raises CalledProcessError and provides exception info."""
-    runner = SdcccRunner(pathlib.Path().absolute(), pathlib.Path(__file__).absolute())
+    runner = SdcccRunner(await anyio.Path().absolute(), await anyio.Path(__file__).absolute())
 
     returncode = int(uuid.uuid4().int & 0xFFFFFFFF)  # ensure that the return code is a 32-bit integer
     stdout = uuid.uuid4().hex.encode()
@@ -362,7 +372,7 @@ async def test_sdccc_runner_run_success():
     config = pathlib.Path(__file__).parent.joinpath('test_version', 'configuration', 'config.toml')
     requirements = pathlib.Path(__file__).parent.joinpath('test_version', 'configuration', 'test_configuration.toml')
     async with anyio.TemporaryDirectory() as temp_dir:
-        runner = SdcccRunner(temp_dir, pathlib.Path(__file__).absolute())
+        runner = SdcccRunner(temp_dir, await anyio.Path(__file__).absolute())
         returncode = 0
         direct_result = object()
         invariant_result = object()
@@ -370,9 +380,9 @@ async def test_sdccc_runner_run_success():
             mock.patch.object(
                 runner,
                 '_get_result',
-                side_effect=lambda file_name: direct_result
-                if file_name == DIRECT_TEST_RESULT_FILE_NAME
-                else invariant_result,
+                side_effect=lambda file_name: (
+                    direct_result if file_name == DIRECT_TEST_RESULT_FILE_NAME else invariant_result
+                ),
             ),
             mock.patch('anyio.open_process') as mock_open_process,
             mock.patch('anyio.create_task_group') as mock_task_group,
@@ -409,7 +419,7 @@ async def test_sdccc_runner_run_nonzero():
     config = pathlib.Path(__file__).parent.joinpath('test_version', 'configuration', 'config.toml')
     requirements = pathlib.Path(__file__).parent.joinpath('test_version', 'configuration', 'test_configuration.toml')
     async with anyio.TemporaryDirectory() as temp_dir:
-        runner = SdcccRunner(temp_dir, pathlib.Path(__file__).absolute())
+        runner = SdcccRunner(temp_dir, await anyio.Path(__file__).absolute())
         returncode = int(uuid.uuid4().int & 0xFFFFFFFF)  # ensure that the return code is a 32-bit integer
         with (
             mock.patch('anyio.open_process') as mock_open_process,

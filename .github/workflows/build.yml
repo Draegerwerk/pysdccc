@@ -38,13 +38,10 @@ jobs:
         uses: astral-sh/setup-uv@v6
       - run: uv venv
 
-      - name: Setup hatch
-        run: uv pip install hatch
-
       - name: Set new version
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
-          uv run hatch version ${GITHUB_REF/refs\/tags\/v/}
+          uv version ${GITHUB_REF/refs\/tags\/v/}
 
       - name: Build package
         run: uv build
@@ -68,8 +65,8 @@ jobs:
 
     strategy:
       matrix:
-        python-version: [ "3.11", "3.12", "3.13" ]
-        os: [ ubuntu-latest, windows-latest ]
+        python-version: [ "3.11", "3.12", "3.13", "3.14" ]
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
         distribution: [ "${{ needs.build.outputs.WHL }}",
                         "${{ needs.build.outputs.TARGZ }}" ]
     runs-on: ${{ matrix.os }}
@@ -94,10 +91,10 @@ jobs:
         run: uv pip install ${{ matrix.distribution }}
 
       - name: Install test dependencies
-        run: uv sync --group test --frozen
+        run: uv sync --group test
 
       - name: Detect suffix on ubuntu
-        if: ${{ matrix.os == 'ubuntu-latest' }}
+        if: ${{ matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest' }}
         run: |
           echo SUFFIX=$(python -c "import pathlib;p=pathlib.Path('${{ matrix.distribution }}');print('whl') if p.suffix=='.whl' else print('tar_gz')") >> $GITHUB_ENV
 

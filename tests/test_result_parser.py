@@ -5,9 +5,9 @@ import uuid
 from unittest import mock
 
 import pytest
-from junitparser import JUnitXml, junitparser  # pyright: ignore [reportPrivateImportUsage]
-from junitparser import TestCase as JUnitTestCase  # pyright: ignore [reportPrivateImportUsage]
-from junitparser import TestSuite as JUnitTestSuite  # pyright: ignore [reportPrivateImportUsage]
+from junitparser import JUnitXml, junitparser
+from junitparser import TestCase as JUnitTestCase
+from junitparser import TestSuite as JUnitTestSuite
 
 from pysdccc._result_parser import TestCase, TestDescriptionElement, TestIdentifierElement, TestSuite
 
@@ -36,10 +36,9 @@ def test_test_case_test_identifier():
     """Test that the test_identifier property of TestCase returns the correct identifier."""
     text = uuid.uuid4().hex
     test_case = TestCase()
-    test_case._elem = mock.Mock()  # noqa: SLF001
-    test_case.child = mock.Mock(return_value=TestIdentifierElement())
-    test_case.child()._elem = mock.Mock()  # noqa: SLF001
-    test_case.child()._elem.text = text  # noqa: SLF001
+    identifier = TestIdentifierElement()
+    identifier._elem.text = text  # noqa: SLF001
+    test_case.append(identifier)
     assert test_case.test_identifier == text
 
 
@@ -47,10 +46,9 @@ def test_test_case_test_description():
     """Test that the test_description property of TestCase returns the correct description."""
     text = uuid.uuid4().hex
     test_case = TestCase()
-    test_case._elem = mock.Mock()  # noqa: SLF001
-    test_case.child = mock.Mock(return_value=TestDescriptionElement())
-    test_case.child()._elem = mock.Mock()  # noqa: SLF001
-    test_case.child()._elem.text = text  # noqa: SLF001
+    description = TestDescriptionElement()
+    description._elem.text = text  # noqa: SLF001
+    test_case.append(description)
     assert test_case.test_description == text
 
 
@@ -78,6 +76,20 @@ async def test_test_suite_from_file(mock_fromfile: mock.MagicMock):
 
     mock_fromfile.return_value = JUnitXml()
     with pytest.raises(TypeError, match=f'Expected class {junitparser.TestSuite}, got {type(None)}'):
+        await TestSuite.from_file('dummy_path')
+
+
+@mock.patch('pysdccc._result_parser.junitparser.JUnitXml.fromfile')
+async def test_test_suite_from_file_fromelem_none(mock_fromfile: mock.MagicMock):
+    """Test that from_file raises ValueError when fromelem returns None."""
+    xml = JUnitXml()
+    suite = JUnitTestSuite()
+    xml.add_testsuite(suite)
+    mock_fromfile.return_value = xml
+    with (
+        mock.patch.object(TestSuite, 'fromelem', return_value=None),
+        pytest.raises(ValueError, match='Failed to parse TestSuite from'),
+    ):
         await TestSuite.from_file('dummy_path')
 
 

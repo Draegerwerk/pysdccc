@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `install` function that accepts both remote URLs and local zip file paths
+- `extract_zip_file` async function in `_download` module
+- `is_remote_path` utility function to distinguish URLs from local file paths
+- CLI `install` command now accepts local zip file paths in addition to URLs
+- exported `install` and `extract_zip_file` from the public API
+- added macos pipeline to CI
+
+### Changed
+
+- replaced pyright with [ty](https://github.com/astral-sh/ty) for type checking
+- switched build backend from hatchling to uv (`uv_build`)
+- CLI `install` argument renamed from `url` to `path` to reflect local path support
+- `build_command` return `Sequence[str]` instead of `list[str]`
+- refactored CLI `download` to only download (returns temp file path); extraction is now a separate step
+- replaced synchronous `zipfile` extraction in async `download` with async `extract_zip_file`
+- fixed sync README example to call `.result()` on `Future` return values
+
 ## [1.0.0] - 2025-08-18
 
 ### Added
