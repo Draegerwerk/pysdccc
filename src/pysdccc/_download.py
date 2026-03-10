@@ -46,8 +46,7 @@ async def _open_download_stream(
     proxy: httpx.Proxy | None = None,
 ) -> AsyncGenerator[httpx.Response, None]:
     """Open a stream from which SDCcc can be downloaded chunk by chunk."""
-    client = httpx.AsyncClient(follow_redirects=True, proxy=proxy)
-    async with client.stream('GET', url) as response:
+    async with httpx.AsyncClient(follow_redirects=True, proxy=proxy) as client, client.stream('GET', url) as response:
         response.raise_for_status()
         yield response
 
@@ -71,11 +70,16 @@ async def download(
         anyio.NamedTemporaryFile('wb', suffix='.zip', delete=False) as temporary_file,
         _open_download_stream(url, proxy=proxy) as response,
     ):
+        temporary_file_path = anyio.Path(cast('str', temporary_file.name))
         async for chunk in response.aiter_bytes():
             await temporary_file.write(chunk)
     output = output or _common.DEFAULT_STORAGE_DIRECTORY
-    logger.info('Extracting SDCcc to %s.', output)
-    await extract_zip_file(cast('str', temporary_file.name), output)
+    try:
+        logger.info('Extracting SDCcc to %s.', output)
+        await extract_zip_file(temporary_file_path, output)
+    finally:
+        with contextlib.suppress(OSError):
+            await temporary_file_path.unlink()
     return _common.get_exe_path(output)
 
 
