@@ -24,21 +24,16 @@ repos:
       - id: check-illegal-windows-names
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.2
+    rev: v0.15.20
     hooks:
       - id: ruff-check
         args: [ --fix, --show-fixes ]
       - id: ruff-format
 
-  - repo: local  # https://github.com/astral-sh/ty/issues/269
+  - repo: https://github.com/astral-sh/ty-pre-commit
+    rev: v0.0.56
     hooks:
       - id: ty
-        name: ty check
-        entry: ty check .
-        language: python
-        types: [ python ]
-        pass_filenames: true
-        additional_dependencies: [ ty >= 0.0.18, pytest >= 8.4.1, anyio >= 4.7.0, junitparser >= 4, httpx >= 0.28.0, click >= 8.0 ]
 
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: v1.10.0
