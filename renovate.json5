@@ -10,5 +10,13 @@
     enabled: true,
   },
   // https://docs.astral.sh/uv/guides/integration/renovate/#dependency-cooldown
-  minimumReleaseAge: "1 week"
+  minimumReleaseAge: "1 week",
+  // https://docs.renovatebot.com/presets-default/#assigneearg0
+  "assignees": [
+    "leon1995"
+  ],
+  // https://docs.renovatebot.com/presets-default/#reviewerarg0
+  "reviewers": [
+    "leon1995"
+  ]
 }
