@@ -1,0 +1,14 @@
+{
+  // https://docs.renovatebot.com/json-schema/
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    // https://docs.renovatebot.com/presets-config/#configrecommended
+    "config:recommended"
+  ],
+  lockFileMaintenance: {
+    // https://docs.astral.sh/uv/guides/integration/renovate/#uvlock-output
+    enabled: true,
+  },
+  // https://docs.astral.sh/uv/guides/integration/renovate/#dependency-cooldown
+  minimumReleaseAge: "1 week"
+}
