@@ -25,7 +25,7 @@ jobs:
 
     steps:
       - name: Download Artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: distributions
           path: dist/
@@ -53,13 +53,13 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Download Build
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: distributions
           path: dist
 
       - name: Download unittest reports
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           pattern: unittest_reports-*
           path: pytest_reports/
