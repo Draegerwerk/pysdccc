@@ -50,7 +50,7 @@ jobs:
 
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Download Build
         uses: actions/download-artifact@v5
