@@ -31,6 +31,7 @@ Usage
         print(test_case.test_description)
 """
 
+import typing
 from collections.abc import Iterator
 
 import anyio.to_thread
@@ -117,7 +118,7 @@ class TestSuite(junitparser.TestSuite):
                 yield test_case
 
     @classmethod
-    async def from_file(cls, file: _common.PATH_TYPE) -> 'TestSuite':
+    async def from_file(cls, file: _common.PATH_TYPE) -> typing.Self:
         """Parse a test suite from a given file.
 
         This method reads a JUnit XML file and parses it into a `TestSuite` object containing custom elements.

@@ -14,7 +14,7 @@ dependencies = [
     "typing-extensions>=4.13.2;python_version<'3.13'",
     "junitparser>=4",
     "httpx>=0.28.0",
-    "anyio>=4.7.0",
+    "anyio>=4.14.2",
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -37,13 +37,13 @@ test = [
     "pytest>=8.4.1",
     "pytest-html>=4",
     "pytest-cov>=6.2.1",
-    "trio>=0.30.0",
+    "anyio[trio]",
     "pysdccc[cli]",
 ]
 dev = [
     { include-group = "test" },
-    "ruff>=0.15.20",
-    "ty>=0.0.56",
+    "ruff>=0.16.0",
+    "ty>=0.0.63",
 ]
 
 [project.scripts]
@@ -93,6 +93,8 @@ max-doc-length = 120 # https://docs.astral.sh/ruff/settings/#max-doc-length
 testpaths = [
     "tests"
 ]
+
+anyio_mode = "auto" # https://anyio.readthedocs.io/en/stable/testing.html - collect async tests without a marker
 
 log_cli = true
 log_cli_level = "info"

@@ -10,8 +10,8 @@ from pysdccc._download import (
     is_downloaded_sync,  # ty:ignore[deprecated]
 )
 from pysdccc._result_parser import TestCase, TestSuite
-from pysdccc._runner import SdcccRunner
-from pysdccc._runner_sync import (
+from pysdccc._runner import (
+    SdcccRunner,
     SdcccRunnerSync,  # ty:ignore[deprecated]
 )
 
