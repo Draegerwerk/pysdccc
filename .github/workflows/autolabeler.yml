@@ -1,0 +1,25 @@
+name: Autolabeler
+
+on:
+  # pull_request_target (instead of pull_request) is required so the autolabeler
+  # also works for pull requests opened from forks. It reads this workflow and
+  # the config from the PR's base branch, so both must be on main to take effect.
+  pull_request_target:
+    types: [ opened, reopened, synchronize ]
+
+permissions:
+  contents: read
+
+jobs:
+  autolabel:
+    name: Autolabel the pull request
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write   # apply labels via the autolabeler
+    steps:
+      - name: Autolabel the pull request
+        uses: release-drafter/release-drafter/autolabeler@v7
+        with:
+          config-name: release-drafter.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
