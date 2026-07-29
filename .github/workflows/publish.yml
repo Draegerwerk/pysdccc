@@ -77,12 +77,22 @@ jobs:
           echo DO_PRERELEASE=$do_prerelease >> $GITHUB_ENV
           echo DO_PRERELEASE=$do_prerelease
 
+      # Promote release-drafter's accumulated draft into a published release,
+      # using the actual pushed tag and the auto-generated notes as the body.
+      - name: Publish GitHub release from release-drafter draft
+        uses: release-drafter/release-drafter@v7
+        with:
+          config-name: release-drafter.yml
+          publish: true
+          tag: ${{ github.ref_name }}
+          prerelease: ${{ env.DO_PRERELEASE == '1' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Attach artifacts to github release
         uses: softprops/action-gh-release@v3
         with:
+          tag_name: ${{ github.ref_name }}
           files: |
-            CHANGELOG.md
             dist/*
             pytest_reports/test_reports.zip
-          prerelease: ${{ env.DO_PRERELEASE == '1' }}
-          body_path: CHANGELOG.md
