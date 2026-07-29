@@ -110,8 +110,8 @@ right section of the auto-generated release notes, so please pick the matching o
 | `chore/`, `refactor/`, `test/`, `ci/`, `build/`, `style/` | Maintenance, refactoring, tests, tooling      | 🔧 Maintenance        |
 | `renovate/`, `dependabot/`                        | Dependency updates (created by the bots)              | ⬆️ Dependencies       |
 
-Breaking changes are detected from the pull request title: prefix it with `!`
-(e.g. `feat!: ...`) or include the phrase "breaking change" in the description, and it
+Breaking changes are detected from the pull request title: prefix it with `breaking:`
+(e.g. `breaking: ...`) or include the phrase "breaking change" in the title, and it
 will be labeled `breaking` and listed under 💥 Breaking Changes.
 
 Labels are applied automatically based on the branch name and pull request title, so a

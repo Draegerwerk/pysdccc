@@ -83,7 +83,7 @@ autolabeler:
       - '/bump .+ from .+ to .+/i'
   - label: "breaking"
     title:
-      - '/^\w+(\(.+\))?!:/'
+      - '/^breaking:/i'
       - '/breaking change/i'
 
 change-template: "- $TITLE (#$NUMBER) @$AUTHOR"

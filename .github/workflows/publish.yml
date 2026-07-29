@@ -46,7 +46,8 @@ jobs:
     needs: upload
     if: needs.upload.outputs.DO_GITHUB_RELEASE == '1'
     permissions:
-      contents: write
+      contents: write        # create/publish the GitHub release
+      pull-requests: read    # release-drafter reads merged PRs to build the notes
 
     steps:
       - name: Check out Git repository
