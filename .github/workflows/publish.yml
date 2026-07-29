@@ -3,9 +3,8 @@ name: Publish package
 on:
   push:
     tags:
-      - "v[0-9]+.[0-9]+.[0-9]+" # normal release
-      - "v[0-9]+.[0-9]+.[0-9]+rc[0-9]+" # release candidate
-      - "v[0-9]+.[0-9]+.[0-9]+[ab][0-9]+" # alpha or beta release
+      - "v[0-9]+.[0-9]+.[0-9]+" # release -> PyPI + GitHub release
+      - "v[0-9]+.[0-9]+.[0-9]+.dev[0-9]+" # test/dev release -> PyPI only
 
 jobs:
   build:
@@ -36,7 +35,7 @@ jobs:
       - name: Detect release version
         id: detect-release
         run: |
-          do_github_release=$((echo "${GITHUB_REF}" | grep -Eq "^refs\/tags\/v[0-9]+\.[0-9]+\.[0-9]+(rc[0-9]+)?$") && echo 1 || echo 0)
+          do_github_release=$((echo "${GITHUB_REF}" | grep -Eq "^refs\/tags\/v[0-9]+\.[0-9]+\.[0-9]+$") && echo 1 || echo 0)
           echo DO_GITHUB_RELEASE=$do_github_release >> $GITHUB_OUTPUT
           echo DO_GITHUB_RELEASE=$do_github_release
 
@@ -71,13 +70,6 @@ jobs:
           files: pytest_reports/
           dest: pytest_reports/test_reports.zip
 
-      - name: Detect prerelease
-        id: detect-prerelease
-        run: |
-          do_prerelease=$((echo "${GITHUB_REF}" | grep -Eq "^refs\/tags\/v[0-9]+\.[0-9]+\.[0-9]+rc[0-9]+$") && echo 1 || echo 0)
-          echo DO_PRERELEASE=$do_prerelease >> $GITHUB_ENV
-          echo DO_PRERELEASE=$do_prerelease
-
       # Promote release-drafter's accumulated draft into a published release,
       # using the actual pushed tag and the auto-generated notes as the body.
       - name: Publish GitHub release from release-drafter draft
@@ -86,7 +78,6 @@ jobs:
           config-name: release-drafter.yml
           publish: true
           tag: ${{ github.ref_name }}
-          prerelease: ${{ env.DO_PRERELEASE == '1' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
