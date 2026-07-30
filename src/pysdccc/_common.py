@@ -4,9 +4,11 @@ import locale
 import os
 import pathlib
 import sys
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 
 import anyio
+from anyio.abc import ByteReceiveStream
+from anyio.streams.text import TextReceiveStream
 
 DEFAULT_STORAGE_DIRECTORY = pathlib.Path(__file__).parent.joinpath('_sdccc')
 """Default directory to store the downloaded SDCcc versions."""
@@ -17,6 +19,12 @@ ENCODING = 'utf-8' if sys.flags.utf8_mode else locale.getencoding()
 
 SINGLE_CMD_TYPE = str | int | bool | pathlib.Path | anyio.Path
 CMD_TYPE = SINGLE_CMD_TYPE | Iterable[str | int | pathlib.Path | anyio.Path] | None
+
+
+async def _drain_stream(stream: ByteReceiveStream, log: Callable[[object], None]) -> None:
+    """Drain the given stream and log its content."""
+    async for chunk in TextReceiveStream(stream, encoding=ENCODING):
+        log(chunk.strip())
 
 
 def build_command(*args: str, **kwargs: CMD_TYPE) -> Sequence[str]:

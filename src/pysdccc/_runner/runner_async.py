@@ -4,13 +4,12 @@ import logging
 import pathlib
 import tomllib
 import typing
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 
 import anyio
-from anyio.abc import ByteReceiveStream
-from anyio.streams.text import TextReceiveStream
 
 from pysdccc import _common
+from pysdccc._common import _drain_stream
 from pysdccc._result_parser import TestSuite
 
 DIRECT_TEST_RESULT_FILE_NAME = 'TEST-SDCcc_direct.xml'
@@ -18,12 +17,6 @@ INVARIANT_TEST_RESULT_FILE_NAME = 'TEST-SDCcc_invariant.xml'
 
 
 __LOGGER__ = logging.getLogger('pysdccc.run')
-
-
-async def _drain_stream(stream: ByteReceiveStream, log: Callable[[object], None]) -> None:
-    """Drain the given stream and log its content."""
-    async for chunk in TextReceiveStream(stream, encoding=_common.ENCODING):
-        log(chunk.strip())
 
 
 class SdcccRunner:
@@ -198,7 +191,7 @@ class SdcccRunner:
             await invariant_results,
         )
 
-    async def get_version(self) -> str | None:
+    async def get_version(self) -> str:
         """Get the version of the SDCcc executable."""
         result = await anyio.run_process([self.exe, '--version'], check=True, cwd=self.exe.parent)
-        return result.stdout.decode(_common.ENCODING).strip() if result.stdout is not None else None
+        return result.stdout.decode(_common.ENCODING).strip()
