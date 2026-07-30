@@ -12,15 +12,13 @@ import pytest
 
 from pysdccc import _common
 from pysdccc._result_parser import TestSuite
-from pysdccc._runner import (
+from pysdccc._runner.runner_async import (
     __LOGGER__,
     DIRECT_TEST_RESULT_FILE_NAME,
     INVARIANT_TEST_RESULT_FILE_NAME,
     SdcccRunner,
     _drain_stream,
 )
-
-pytestmark = pytest.mark.anyio
 
 
 async def test_drain_stream():

@@ -16,7 +16,16 @@ from click.testing import CliRunner
 
 import pysdccc
 import pysdccc._cli
-from pysdccc._cli import PATH, PROXY, _download_to_stream, cli, download, extract_zip_file, sdccc
+from pysdccc._cli import (
+    PATH,
+    PROXY,
+    _download_to_stream,
+    cli,
+    download,
+    extract_zip_file,
+    sdccc,
+    sdccc_checker_tool,
+)
 
 
 def test_import_error_without_click():
@@ -248,7 +257,7 @@ def test_sdccc_success(tmp_path: pathlib.Path):
         mock.patch('sys.argv', [exe_path, '--foo', uuid.uuid4().hex]) as mock_sys_argv,
     ):
         sdccc()
-    mock_run.assert_called_once_with(mock_sys_argv, check=True, cwd=exe_path.parent)
+    mock_run.assert_called_once_with([str(exe_path), *mock_sys_argv[1:]], check=True, cwd=exe_path.parent)
 
 
 def test_sdccc_file_not_found(tmp_path: pathlib.Path):
@@ -265,7 +274,7 @@ def test_sdccc_file_not_found(tmp_path: pathlib.Path):
         pytest.raises(SystemExit) as excinfo,
     ):
         sdccc()
-    mock_run.assert_called_once_with([exe_path, *sys.argv[1:]], check=True, cwd=exe_path.parent)
+    mock_run.assert_called_once_with([str(exe_path), *sys.argv[1:]], check=True, cwd=exe_path.parent)
     assert excinfo.value.code == 1
 
 
@@ -284,4 +293,50 @@ def test_sdccc_subprocess_error():
         pytest.raises(SystemExit) as excinfo,
     ):
         sdccc()
+    assert excinfo.value.code == return_code
+
+
+def test_sdccc_checker_tool_success(tmp_path: pathlib.Path):
+    """Test sdccc_checker_tool runs the checker tool executable successfully."""
+    exe_path = tmp_path.joinpath(f'sdccc-internal-checker-tool-{uuid.uuid4().hex}.exe')
+    with (
+        mock.patch('pysdccc._common.get_checker_tool_exe_path', return_value=exe_path),
+        mock.patch('subprocess.run') as mock_run,
+        mock.patch('sys.argv', [exe_path, '--mdibpath', uuid.uuid4().hex]) as mock_sys_argv,
+    ):
+        sdccc_checker_tool()
+    mock_run.assert_called_once_with([str(exe_path), *mock_sys_argv[1:]], check=True, cwd=exe_path.parent)
+
+
+def test_sdccc_checker_tool_file_not_found(tmp_path: pathlib.Path):
+    """Test sdccc_checker_tool when the checker tool executable is not found."""
+    exe_path = tmp_path.joinpath(f'sdccc-internal-checker-tool-{uuid.uuid4().hex}.exe')
+
+    def side_effect(*_, **__):  # noqa: ANN002, ANN003
+        msg = f'Executable not found at {exe_path}'
+        raise FileNotFoundError(msg)
+
+    with (
+        mock.patch('pysdccc._common.get_checker_tool_exe_path', side_effect=side_effect),
+        pytest.raises(SystemExit) as excinfo,
+    ):
+        sdccc_checker_tool()
+    assert excinfo.value.code == 1
+
+
+def test_sdccc_checker_tool_subprocess_error():
+    """Test sdccc_checker_tool when subprocess.run returns non-zero exit code."""
+    exe_path = pathlib.Path(f'/fake/path/sdccc-internal-checker-tool-{uuid.uuid4().hex}.exe')
+
+    return_code = random.randint(1, 100)
+
+    def side_effect(*_, **__):  # noqa: ANN002, ANN003
+        raise subprocess.CalledProcessError(returncode=return_code, cmd=mock.MagicMock())
+
+    with (
+        mock.patch('pysdccc._common.get_checker_tool_exe_path', return_value=exe_path),
+        mock.patch('subprocess.run', side_effect=side_effect),
+        pytest.raises(SystemExit) as excinfo,
+    ):
+        sdccc_checker_tool()
     assert excinfo.value.code == return_code

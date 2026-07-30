@@ -11,8 +11,6 @@ from junitparser import TestSuite as JUnitTestSuite
 
 from pysdccc._result_parser import TestCase, TestDescriptionElement, TestIdentifierElement, TestSuite
 
-pytestmark = pytest.mark.anyio
-
 
 def test_test_identifier_element_text():
     """Test that the text property of TestIdentifierElement returns the correct text."""

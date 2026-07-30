@@ -119,6 +119,21 @@ clear, descriptive title matters. Maintainers can also add or correct labels by 
 needed. Release notes are then drafted automatically from these labels — the `CHANGELOG.md`
 file no longer needs to be updated manually.
 
+## Releasing
+
+Releases are published by maintainers from the *Publish package* workflow; pushing a tag by
+hand does not release anything. The draft release that release-drafter keeps up to date is the
+single source of the release notes and is published verbatim.
+
+1. Review the draft release under *Releases* and adjust its text if needed. Its version is
+   resolved from the pull request labels, so correct the labels first if the version is wrong.
+2. Run the *Publish package* workflow on `main` and enter the version without the leading `v`
+   (e.g. `1.2.0`).
+3. The workflow validates the draft, uploads the package to PyPI, attaches the wheel, the sdist
+   and the test reports to the release and then publishes the draft — which creates the tag.
+4. For a pre-release on PyPI only, run the same workflow with a `.dev` version (e.g.
+   `1.2.0.dev1`). It uploads to PyPI and tags the commit, but leaves the draft untouched.
+
 ## How to create a pull request
 
 Creating a pull request is a critical step in contributing to our project. Here's how to do it effectively:

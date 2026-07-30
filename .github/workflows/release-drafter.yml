@@ -1,6 +1,8 @@
 name: Release Drafter
 
 on:
+  workflow_dispatch:
+
   push:
     # Update the draft release whenever commits land on main.
     branches:

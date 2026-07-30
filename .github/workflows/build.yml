@@ -1,5 +1,10 @@
 on:
   workflow_call:
+    inputs:
+      version:
+        description: "Version to stamp into the package."
+        required: true
+        type: string
   pull_request:
     types: [ opened, synchronize, reopened, ready_for_review ]
   push:
@@ -38,10 +43,13 @@ jobs:
         uses: astral-sh/setup-uv@v9.0.0
       - run: uv venv
 
-      - name: Set new version
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: |
-          uv version ${GITHUB_REF/refs\/tags\/v/}
+      # Only set when called via workflow_call; pull request and main builds keep
+      # the placeholder version from pyproject.toml.
+      - name: Set version
+        if: inputs.version != ''
+        env:
+          VERSION: ${{ inputs.version }}
+        run: uv version "$VERSION"
 
       - name: Build package
         run: uv build
