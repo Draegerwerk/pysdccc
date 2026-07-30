@@ -257,7 +257,7 @@ def test_sdccc_success(tmp_path: pathlib.Path):
         mock.patch('sys.argv', [exe_path, '--foo', uuid.uuid4().hex]) as mock_sys_argv,
     ):
         sdccc()
-    mock_run.assert_called_once_with(mock_sys_argv, check=True, cwd=exe_path.parent)
+    mock_run.assert_called_once_with([str(exe_path), *mock_sys_argv[1:]], check=True, cwd=exe_path.parent)
 
 
 def test_sdccc_file_not_found(tmp_path: pathlib.Path):
@@ -274,7 +274,7 @@ def test_sdccc_file_not_found(tmp_path: pathlib.Path):
         pytest.raises(SystemExit) as excinfo,
     ):
         sdccc()
-    mock_run.assert_called_once_with([exe_path, *sys.argv[1:]], check=True, cwd=exe_path.parent)
+    mock_run.assert_called_once_with([str(exe_path), *sys.argv[1:]], check=True, cwd=exe_path.parent)
     assert excinfo.value.code == 1
 
 
@@ -305,7 +305,7 @@ def test_sdccc_checker_tool_success(tmp_path: pathlib.Path):
         mock.patch('sys.argv', [exe_path, '--mdibpath', uuid.uuid4().hex]) as mock_sys_argv,
     ):
         sdccc_checker_tool()
-    mock_run.assert_called_once_with(mock_sys_argv, check=True, cwd=exe_path.parent)
+    mock_run.assert_called_once_with([str(exe_path), *mock_sys_argv[1:]], check=True, cwd=exe_path.parent)
 
 
 def test_sdccc_checker_tool_file_not_found(tmp_path: pathlib.Path):

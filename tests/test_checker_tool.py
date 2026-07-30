@@ -47,9 +47,9 @@ async def test_checker_tool_prepare_command_relative_paths():
     tool = SdcccCheckerTool(pathlib.Path(__file__))
     absolute = await anyio.Path().absolute()
     with pytest.raises(ValueError, match='Path to mdib file must be absolute'):
-        tool._prepare_command(mdib=anyio.Path(), reference=absolute, generate_reference=False)  # noqa: SLF001
+        tool._prepare_command(mdib=anyio.Path(), reference=absolute)  # noqa: SLF001
     with pytest.raises(ValueError, match='Path to reference file must be absolute'):
-        tool._prepare_command(mdib=absolute, reference=anyio.Path(), generate_reference=False)  # noqa: SLF001
+        tool._prepare_command(mdib=absolute, reference=anyio.Path())  # noqa: SLF001
 
 
 async def test_checker_tool_prepare_command():
@@ -58,24 +58,16 @@ async def test_checker_tool_prepare_command():
     mdib = await anyio.Path(__file__).absolute()
     reference = (await anyio.Path().absolute()).joinpath(f'{uuid.uuid4().hex}.json')
 
-    assert tool._prepare_command(mdib=mdib, reference=reference, generate_reference=False) == [  # noqa: SLF001
+    assert tool._prepare_command(mdib=mdib, reference=reference) == [  # noqa: SLF001
         '--mdibpath',
         str(mdib),
         '--refpath',
         str(reference),
-    ]
-    assert tool._prepare_command(mdib=mdib, reference=reference, generate_reference=True) == [  # noqa: SLF001
-        '--mdibpath',
-        str(mdib),
-        '--refpath',
-        str(reference),
-        '--generateref',
     ]
 
 
 @pytest.mark.parametrize('returncode', [0, 1, 2])
-@pytest.mark.parametrize('generate_reference', [False, True])
-async def test_checker_tool_run(returncode: int, generate_reference: bool):  # noqa: FBT001
+async def test_checker_tool_run(returncode: int):
     """Test that run passes the returncode through verbatim and logs stdout and stderr."""
     tool = SdcccCheckerTool(pathlib.Path(__file__))
     mdib = await anyio.Path(__file__).absolute()
@@ -88,7 +80,7 @@ async def test_checker_tool_run(returncode: int, generate_reference: bool):  # n
         mock_open_process.return_value.__aenter__.return_value.wait = mock.AsyncMock(return_value=returncode)
         mock_start_soon = mock.MagicMock()
         mock_task_group.return_value.__aenter__.return_value.start_soon = mock_start_soon
-        result = await tool.run(mdib=mdib, reference=reference, generate_reference=generate_reference)
+        result = await tool.run(mdib=mdib, reference=reference)
 
     assert result == returncode
     mock_open_process.assert_called_once_with(
@@ -98,7 +90,6 @@ async def test_checker_tool_run(returncode: int, generate_reference: bool):  # n
             str(mdib),
             '--refpath',
             str(reference),
-            *(['--generateref'] if generate_reference else []),
         ],
         cwd=str(tool.exe.parent),
     )
