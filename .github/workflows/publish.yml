@@ -1,21 +1,94 @@
 name: Publish package
 
+# Single entry point for both final and dev releases. The version string decides
+# what happens:
+#   1.2.0       -> PyPI + the accumulated draft release is published as is
+#   1.2.0.dev1  -> PyPI only, plus a lightweight tag; the draft is untouched
 on:
-  push:
-    tags:
-      - "v[0-9]+.[0-9]+.[0-9]+" # release -> PyPI + GitHub release
-      - "v[0-9]+.[0-9]+.[0-9]+.dev[0-9]+" # test/dev release -> PyPI only
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to publish, e.g. 1.2.0 (release) or 1.2.0.dev1 (PyPI only)"
+        required: true
+        type: string
+
+permissions: { }
 
 jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write        # reading a draft release requires push access
+    outputs:
+      IS_DEV: ${{ steps.detect-dev.outputs.IS_DEV }}
+    env:
+      GH_REPO: ${{ github.repository }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      VERSION: ${{ inputs.version }}
+      TAG: v${{ inputs.version }}
+      DRAFTER_URL: ${{ github.server_url }}/${{ github.repository }}/actions/workflows/release-drafter.yml
+
+    steps:
+      - name: Validate version
+        run: |
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(\.dev[0-9]+)?$ ]]; then
+            echo "::error::Version must match MAJOR.MINOR.PATCH or MAJOR.MINOR.PATCH.devN (e.g. 1.2.0 or 1.2.0.dev1)"
+            exit 1
+          fi
+
+      - name: Detect dev version
+        id: detect-dev
+        run: |
+          is_dev=$([[ "$VERSION" == *.dev* ]] && echo true || echo false)
+          echo "IS_DEV=$is_dev" >> $GITHUB_OUTPUT
+          echo "IS_DEV=$is_dev"
+
+      # Fail fast: for a dev release creating the tag would otherwise fail after the
+      # PyPI upload, and for a final release an existing tag would bypass the target
+      # commit check below (GitHub publishes a draft against a pre-existing tag).
+      - name: Ensure the tag does not exist yet
+        run: |
+          if gh api "repos/$GH_REPO/git/ref/tags/$TAG" >/dev/null 2>&1; then
+            echo "::error::Tag $TAG already exists"
+            exit 1
+          fi
+
+      - name: Validate draft release
+        if: steps.detect-dev.outputs.IS_DEV == 'false'
+        run: |
+          RELEASE_JSON=$(gh release view "$TAG" --json isDraft,targetCommitish 2>&1) || {
+            echo "::error::No release found for $TAG. The Release Drafter workflow ($DRAFTER_URL) has to have run for this commit; it resolves the version from the pull request labels, so either fix the labels and re-run it, or adjust the tag on the draft."
+            exit 1
+          }
+
+          IS_DRAFT=$(echo "$RELEASE_JSON" | jq -r '.isDraft')
+          TARGET=$(echo "$RELEASE_JSON" | jq -r '.targetCommitish')
+
+          if [[ "$IS_DRAFT" != "true" ]]; then
+            echo "::error::Release $TAG already exists and is not a draft"
+            exit 1
+          fi
+
+          # release-drafter targets the branch name, not a commit sha, so resolve it first.
+          TARGET_SHA=$(gh api "repos/$GH_REPO/commits/$TARGET" --jq '.sha')
+
+          if [[ "$TARGET_SHA" != "$GITHUB_SHA" ]]; then
+            echo "::error::Draft release target $TARGET ($TARGET_SHA) does not match the dispatched commit ($GITHUB_SHA). Either the draft is out of date - run the Release Drafter workflow first ($DRAFTER_URL) - or this workflow was dispatched from a commit other than the head of $TARGET."
+            exit 1
+          fi
+
   build:
+    needs: validate
     uses: ./.github/workflows/build.yml
+    with:
+      version: ${{ inputs.version }}
+    secrets: inherit         # CODECOV_TOKEN; local reusable workflows do not inherit secrets implicitly
 
   upload:
     name: Upload
     runs-on: ubuntu-latest
     needs: build
-    outputs:
-      DO_GITHUB_RELEASE: ${{ steps.detect-release.outputs.DO_GITHUB_RELEASE }}
     environment:
       name: pypi
       url: https://pypi.org/p/pysdccc
@@ -32,26 +105,22 @@ jobs:
       - name: Publish package to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
 
-      - name: Detect release version
-        id: detect-release
-        run: |
-          do_github_release=$((echo "${GITHUB_REF}" | grep -Eq "^refs\/tags\/v[0-9]+\.[0-9]+\.[0-9]+$") && echo 1 || echo 0)
-          echo DO_GITHUB_RELEASE=$do_github_release >> $GITHUB_OUTPUT
-          echo DO_GITHUB_RELEASE=$do_github_release
-
   release:
     name: Release
     runs-on: ubuntu-latest
-    needs: upload
-    if: needs.upload.outputs.DO_GITHUB_RELEASE == '1'
+    needs:
+      - validate
+      - upload
+    if: needs.validate.outputs.IS_DEV == 'false'
     permissions:
-      contents: write        # create/publish the GitHub release
-      pull-requests: read    # release-drafter reads merged PRs to build the notes
+      contents: write        # attach assets to and publish the draft release
+    env:
+      GH_REPO: ${{ github.repository }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TAG: v${{ inputs.version }}
+      DRAFTER_URL: ${{ github.server_url }}/${{ github.repository }}/actions/workflows/release-drafter.yml
 
     steps:
-      - name: Check out Git repository
-        uses: actions/checkout@v7
-
       - name: Download Build
         uses: actions/download-artifact@v8
         with:
@@ -70,21 +139,56 @@ jobs:
           files: pytest_reports/
           dest: pytest_reports/test_reports.zip
 
-      # Promote release-drafter's accumulated draft into a published release,
-      # using the actual pushed tag and the auto-generated notes as the body.
-      - name: Publish GitHub release from release-drafter draft
-        uses: release-drafter/release-drafter@v7
-        with:
-          config-name: release-drafter.yml
-          publish: true
-          tag: ${{ github.ref_name }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Re-check: the build and the tests ran in between, so the draft may have changed.
+      - name: Re-validate draft release
+        run: |
+          RELEASE_JSON=$(gh release view "$TAG" --json isDraft,targetCommitish 2>&1) || {
+            echo "::error::No release found for $TAG. The draft was still there when the run started - has it been deleted in the meantime? Re-run the Release Drafter workflow to recreate it: $DRAFTER_URL"
+            exit 1
+          }
 
-      - name: Attach artifacts to github release
-        uses: softprops/action-gh-release@v3
-        with:
-          tag_name: ${{ github.ref_name }}
-          files: |
-            dist/*
-            pytest_reports/test_reports.zip
+          IS_DRAFT=$(echo "$RELEASE_JSON" | jq -r '.isDraft')
+          TARGET=$(echo "$RELEASE_JSON" | jq -r '.targetCommitish')
+
+          if [[ "$IS_DRAFT" != "true" ]]; then
+            echo "::error::Release $TAG already exists and is not a draft"
+            exit 1
+          fi
+
+          TARGET_SHA=$(gh api "repos/$GH_REPO/commits/$TARGET" --jq '.sha')
+
+          if [[ "$TARGET_SHA" != "$GITHUB_SHA" ]]; then
+            echo "::error::Draft release target $TARGET ($TARGET_SHA) does not match the dispatched commit ($GITHUB_SHA). Either the draft is out of date - run the Release Drafter workflow first ($DRAFTER_URL) - or this workflow was dispatched from a commit other than the head of $TARGET."
+            exit 1
+          fi
+
+      - name: Attach artifacts to the draft release
+        run: gh release upload "$TAG" dist/* pytest_reports/test_reports.zip --clobber
+
+      # Publishes the notes accumulated by release-drafter verbatim - they are never
+      # regenerated here. Publishing creates the git tag on the draft's target commit;
+      # since GITHUB_TOKEN is used, that tag does not trigger any further workflow.
+      - name: Publish the draft release
+        run: |
+          echo "Publishing draft release $TAG"
+          gh release edit "$TAG" --draft=false
+
+  tag-dev:
+    name: Tag dev version
+    runs-on: ubuntu-latest
+    needs:
+      - validate
+      - upload
+    if: needs.validate.outputs.IS_DEV == 'true'
+    permissions:
+      contents: write        # create the lightweight tag
+    env:
+      GH_REPO: ${{ github.repository }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TAG: v${{ inputs.version }}
+
+    steps:
+      - name: Tag the dispatched commit
+        run: |
+          echo "Tagging $GITHUB_SHA as $TAG"
+          gh api "repos/$GH_REPO/git/refs" -f ref="refs/tags/$TAG" -f sha="$GITHUB_SHA" --silent
