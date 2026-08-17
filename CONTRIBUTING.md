@@ -57,7 +57,7 @@ practices to facilitate collaboration and code quality.
 ### Formatting / Static Code Analysis
 
 - Use [ruff](https://docs.astral.sh/ruff/) to ensure your code adheres to our coding standards.
-- Use [pyright](https://github.com/microsoft/pyright) for type checking. Ensure your code is typed and passes pyright checks.
+- Use [ty]([https://docs.astral.sh/ty/]) for type checking. Ensure your code is typed and passes ty checks.
 
 Checkout our [`pyproject.toml`](https://github.com/Draegerwerk/pysdccc/blob/main/pyproject.toml) for more details.
 

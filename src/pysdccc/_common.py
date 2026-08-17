@@ -53,8 +53,7 @@ def _find_single_exe(local_path: PATH_TYPE, *, checker_tool: bool) -> os.PathLik
     """Find exactly one ``.exe`` in ``local_path``, selecting the runner or the checker tool.
 
     :param local_path: The local path to search for executables.
-    :param checker_tool: If True, select the checker tool executable (name contains
-                         :data:`CHECKER_TOOL_MARKER`); otherwise select the test runner executable.
+    :param checker_tool: If True, select the checker tool executable; otherwise select the test runner executable.
     :return: The path to the matching executable file.
     :raises FileNotFoundError: If no matching executable or more than one matching executable is found.
     """
@@ -70,8 +69,7 @@ def _find_single_exe(local_path: PATH_TYPE, *, checker_tool: bool) -> os.PathLik
 def get_exe_path(local_path: PATH_TYPE) -> os.PathLike[str]:
     """Get the path to the SDCcc test runner executable.
 
-    This function searches the specified local path for the SDCcc test runner executable (``*.exe`` whose name does not
-    follow ``sdccc-internal-<version>.exe``). The checker tool executable, if present, is ignored.
+    This function searches the specified local path for the SDCcc test runner executable.
     It expects exactly one such file to be present in the directory. If no such file or more than one file is found,
     a FileNotFoundError is raised.
 
@@ -85,8 +83,8 @@ def get_exe_path(local_path: PATH_TYPE) -> os.PathLike[str]:
 def get_checker_tool_exe_path(local_path: PATH_TYPE) -> os.PathLike[str]:
     """Get the path to the SDCcc checker tool executable.
 
-    This function searches the specified local path for the SDCcc checker tool executable (``*.exe`` whose name contains
-    ``sdccc-internal-checker-tool-<version>.exe``). It expects exactly one such file to be present in the directory.
+    This function searches the specified local path for the SDCcc checker tool executable.
+    It expects exactly one such file to be present in the directory.
     If no such file or more than one file is found, a FileNotFoundError is raised. Older SDCcc releases that ship only
     the test runner do not contain a checker tool, so this raises for those installations.
 

@@ -160,10 +160,6 @@ def _passthrough(get_exe: Callable[[_common.PATH_TYPE], os.PathLike[str]]):
             check=True,
             cwd=exe.parent,
         )
-    except FileNotFoundError as e:
-        # because this is not a click command, we need to handle the error manually
-        click.echo("SDCcc is not installed. Please install using 'pysdccc install <url>'.", err=True)
-        raise SystemExit(1) from e
     except subprocess.CalledProcessError as e:
         click.echo(e, err=True)
         raise SystemExit(e.returncode) from e
@@ -171,9 +167,23 @@ def _passthrough(get_exe: Callable[[_common.PATH_TYPE], os.PathLike[str]]):
 
 def sdccc():
     """Forward the command line arguments to the SDCcc test runner executable."""
-    _passthrough(_common.get_exe_path)
+    try:
+        _passthrough(_common.get_exe_path)
+    except FileNotFoundError as e:
+        # because this is not a click command, we need to handle the error manually
+        click.echo("SDCcc is not installed. Please install using 'pysdccc install <url>'.", err=True)
+        raise SystemExit(1) from e
 
 
 def sdccc_checker_tool():
     """Forward the command line arguments to the SDCcc checker tool executable."""
-    _passthrough(_common.get_checker_tool_exe_path)
+    try:
+        _passthrough(_common.get_checker_tool_exe_path)
+    except FileNotFoundError as e:
+        # because this is not a click command, we need to handle the error manually
+        click.echo(
+            'The checker tool is not installed. '
+            "Please install at newer version of SDCcc using 'pysdccc install <url>'.",
+            err=True,
+        )
+        raise SystemExit(1) from e

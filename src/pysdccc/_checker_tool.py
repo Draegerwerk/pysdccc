@@ -15,11 +15,8 @@ __LOGGER__ = logging.getLogger('pysdccc.checker_tool')
 class SdcccCheckerTool:
     """Asynchronous runner for the SDCcc checker tool.
 
-    The checker tool, also called `SimpleMdibComp`, checks a single MdibVersion of an MDIB from a single SequenceId
-    against a reference file, or generates a matching reference file based on such a provided MDIB. It does not replace
-    the functionality of the SDCcc test runner, see :class:`pysdccc.SdcccRunner`, because there multiple such versions
-    might be combined into a single reference file for comparison, and for generation a whole database might be used
-    instead.
+    The checker tool checks a single MdibVersion of an MDIB from a single SequenceId against a reference file,
+    or generates a matching reference file based on such a provided MDIB.
     """
 
     def __init__(self, exe: _common.PATH_TYPE | None = None):
@@ -51,22 +48,22 @@ class SdcccCheckerTool:
         """Get the path to the SDCcc checker tool executable."""
         return anyio.Path(self._exe)
 
+    @staticmethod
     def _prepare_command(
-        self,
         *args: str,
-        mdib: anyio.Path,
-        reference: anyio.Path,
+        mdib_path: anyio.Path,
+        refpath: anyio.Path,
         **kwargs: _common.CMD_TYPE,
     ) -> Sequence[str]:
-        if not mdib.is_absolute():
+        if not mdib_path.is_absolute():
             msg = 'Path to mdib file must be absolute'
             raise ValueError(msg)
-        if not reference.is_absolute():
+        if not refpath.is_absolute():
             msg = 'Path to reference file must be absolute'
             raise ValueError(msg)
 
-        kwargs['mdibpath'] = mdib
-        kwargs['refpath'] = reference
+        kwargs['mdibpath'] = mdib_path
+        kwargs['refpath'] = refpath
         return _common.build_command(*args, **kwargs)
 
     async def run(
@@ -86,20 +83,18 @@ class SdcccCheckerTool:
         """
         command = self._prepare_command(
             str(self.exe),
-            mdib=anyio.Path(mdib),
-            reference=anyio.Path(reference),
+            mdib_path=anyio.Path(mdib),
+            refpath=anyio.Path(reference),
             **kwargs,
         )
 
-        async with (
-            await anyio.open_process(command, cwd=str(self.exe.parent)) as process,
-            anyio.create_task_group() as tg,
-        ):
-            if process.stdout:
-                tg.start_soon(_drain_stream, process.stdout, __LOGGER__.info)
+        async with await anyio.open_process(command, cwd=str(self.exe.parent)) as process:
+            async with anyio.create_task_group() as tg:
+                if process.stdout:
+                    tg.start_soon(_drain_stream, process.stdout, __LOGGER__.info)
 
-            if process.stderr:
-                tg.start_soon(_drain_stream, process.stderr, __LOGGER__.error)
+                if process.stderr:
+                    tg.start_soon(_drain_stream, process.stderr, __LOGGER__.error)
 
             return await process.wait()
 

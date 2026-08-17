@@ -47,9 +47,9 @@ async def test_checker_tool_prepare_command_relative_paths():
     tool = SdcccCheckerTool(pathlib.Path(__file__))
     absolute = await anyio.Path().absolute()
     with pytest.raises(ValueError, match='Path to mdib file must be absolute'):
-        tool._prepare_command(mdib=anyio.Path(), reference=absolute)  # noqa: SLF001
+        tool._prepare_command(mdib_path=anyio.Path(), refpath=absolute)  # noqa: SLF001
     with pytest.raises(ValueError, match='Path to reference file must be absolute'):
-        tool._prepare_command(mdib=absolute, reference=anyio.Path())  # noqa: SLF001
+        tool._prepare_command(mdib_path=absolute, refpath=anyio.Path())  # noqa: SLF001
 
 
 async def test_checker_tool_prepare_command():
@@ -58,7 +58,7 @@ async def test_checker_tool_prepare_command():
     mdib = await anyio.Path(__file__).absolute()
     reference = (await anyio.Path().absolute()).joinpath(f'{uuid.uuid4().hex}.json')
 
-    assert tool._prepare_command(mdib=mdib, reference=reference) == [  # noqa: SLF001
+    assert tool._prepare_command(mdib_path=mdib, refpath=reference) == [  # noqa: SLF001
         '--mdibpath',
         str(mdib),
         '--refpath',

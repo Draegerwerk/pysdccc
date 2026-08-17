@@ -1,6 +1,7 @@
 """Tests for the _common module."""
 
 import pathlib
+import re
 import uuid
 from collections.abc import Mapping
 from unittest import mock
@@ -103,8 +104,8 @@ def test_get_exe_path():
 
 def test_get_exe_path_ignores_checker_tool():
     """Test that the runner and checker tool executables are told apart when both are present."""
-    runner = pathlib.Path('sdccc-internal-1.0.0.exe')
-    checker = pathlib.Path('sdccc-internal-checker-tool-1.0.0.exe')
+    runner = pathlib.Path('sdccc-1.0.0.exe')
+    checker = pathlib.Path('sdccc-checker-tool-1.0.0.exe')
     assert not runner.exists()
     assert not checker.exists()
 
@@ -118,13 +119,15 @@ def test_get_exe_path_ignores_checker_tool():
 
 def test_get_checker_tool_exe_path_missing():
     """Test that the checker tool accessor raises when only the runner executable is present."""
-    runner = pathlib.Path('sdccc-internal-1.0.0.exe')
+    runner = pathlib.Path('sdccc-1.0.0.exe')
     assert not runner.exists()
 
     with (
         mock.patch('pathlib.Path.glob', return_value=[runner]),
         mock.patch('pathlib.Path.is_file', return_value=True),
-        pytest.raises(FileNotFoundError),
+        pytest.raises(
+            FileNotFoundError, match=re.escape(f'Expected a single checker tool executable, got [] in path {runner}')
+        ),
     ):
         _common.get_checker_tool_exe_path(runner)
 

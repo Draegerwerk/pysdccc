@@ -15,7 +15,6 @@ import pytest
 from click.testing import CliRunner
 
 import pysdccc
-import pysdccc._cli
 from pysdccc._cli import (
     PATH,
     PROXY,
@@ -298,7 +297,7 @@ def test_sdccc_subprocess_error():
 
 def test_sdccc_checker_tool_success(tmp_path: pathlib.Path):
     """Test sdccc_checker_tool runs the checker tool executable successfully."""
-    exe_path = tmp_path.joinpath(f'sdccc-internal-checker-tool-{uuid.uuid4().hex}.exe')
+    exe_path = tmp_path.joinpath(f'{uuid.uuid4().hex}.exe')
     with (
         mock.patch('pysdccc._common.get_checker_tool_exe_path', return_value=exe_path),
         mock.patch('subprocess.run') as mock_run,
@@ -310,7 +309,7 @@ def test_sdccc_checker_tool_success(tmp_path: pathlib.Path):
 
 def test_sdccc_checker_tool_file_not_found(tmp_path: pathlib.Path):
     """Test sdccc_checker_tool when the checker tool executable is not found."""
-    exe_path = tmp_path.joinpath(f'sdccc-internal-checker-tool-{uuid.uuid4().hex}.exe')
+    exe_path = tmp_path.joinpath(f'{uuid.uuid4().hex}.exe')
 
     def side_effect(*_, **__):  # noqa: ANN002, ANN003
         msg = f'Executable not found at {exe_path}'
@@ -326,7 +325,7 @@ def test_sdccc_checker_tool_file_not_found(tmp_path: pathlib.Path):
 
 def test_sdccc_checker_tool_subprocess_error():
     """Test sdccc_checker_tool when subprocess.run returns non-zero exit code."""
-    exe_path = pathlib.Path(f'/fake/path/sdccc-internal-checker-tool-{uuid.uuid4().hex}.exe')
+    exe_path = pathlib.Path(f'/fake/path/{uuid.uuid4().hex}.exe')
 
     return_code = random.randint(1, 100)
 
