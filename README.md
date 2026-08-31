@@ -24,22 +24,22 @@ import pysdccc
 
 
 async def main():
-    if not await pysdccc.is_downloaded("my-specific-version"):
-        await pysdccc.download("https://url/to/sdccc.zip")
+    if not await pysdccc.is_downloaded('my-specific-version'):
+        await pysdccc.download('https://url/to/sdccc.zip')
 
-    runner = pysdccc.SdcccRunner("/path/to/sdccc/result/directory")
+    runner = pysdccc.SdcccRunner('/path/to/sdccc/result/directory')
 
     # https://github.com/Draegerwerk/SDCcc/?tab=readme-ov-file#exit-codes
     return_code, direct_result, invariant_result = await runner.run(
-        config="/path/to/configuration/file.toml",
-        requirements="/path/to/requirements/file.toml",
+        config='/path/to/configuration/file.toml',
+        requirements='/path/to/requirements/file.toml',
     )
     if direct_result is None or invariant_result is None:
-        print("No result file available")
+        print('No result file available')
         return
 
     for test_case in direct_result + invariant_result:
-        print(f"{test_case.test_identifier}: {test_case.is_passed}")
+        print(f'{test_case.test_identifier}: {test_case.is_passed}')
 ```
 If you look for a synchronous version. Please note this is deprecated. The async methods are the preferred way.
 
@@ -48,15 +48,15 @@ import pysdccc
 
 
 def main():
-    if not pysdccc.is_downloaded_sync("my-specific-version").result():
-        pysdccc.download_sync("https://url/to/sdccc.zip").result()
+    if not pysdccc.is_downloaded_sync('my-specific-version').result():
+        pysdccc.download_sync('https://url/to/sdccc.zip').result()
 
-    runner = pysdccc.SdcccRunnerSync("/path/to/sdccc/result/directory")
+    runner = pysdccc.SdcccRunnerSync('/path/to/sdccc/result/directory')
 
     # https://github.com/Draegerwerk/SDCcc/?tab=readme-ov-file#exit-codes
     return_code, direct_result, invariant_result = runner.run(
-        config="/path/to/configuration/file.toml",
-        requirements="/path/to/requirements/file.toml",
+        config='/path/to/configuration/file.toml',
+        requirements='/path/to/requirements/file.toml',
     ).result(timeout=60)  # use .result(timeout=...) to wait for the result in a synchronous way
 
     # checkout example from above ...
@@ -88,7 +88,7 @@ async def main():
 
     # or if you have already downloaded SDCcc
     config = await runner.get_config()  # load default configuration
-    config['SDCcc']['Consumer']['DeviceEpr'] = "urn:uuid:12345678-1234-1234-1234-123456789012"  # e.g. change device epr
+    config['SDCcc']['Consumer']['DeviceEpr'] = 'urn:uuid:12345678-1234-1234-1234-123456789012'  # e.g. change device epr
     # save and run as above
 ```
 
@@ -137,11 +137,7 @@ import pysdccc
 
 
 async def main():
-    testparameter_config = {
-        'TestParameter': {
-            ...
-        }
-    }
+    testparameter_config = {'TestParameter': {...}}
     testparameter_config_path = anyio.Path('/path/to/test_parameter/file.toml')
     await testparameter_config_path.write_text(toml.dumps(testparameter_config))
 
