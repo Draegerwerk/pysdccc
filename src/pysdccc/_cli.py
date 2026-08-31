@@ -183,7 +183,7 @@ def sdccc_checker_tool():
         # because this is not a click command, we need to handle the error manually
         click.echo(
             'The checker tool is not installed. '
-            "Please install at newer version of SDCcc using 'pysdccc install <url>'.",
+            "Please install a newer version of SDCcc using 'pysdccc install <url>'.",
             err=True,
         )
         raise SystemExit(1) from e
