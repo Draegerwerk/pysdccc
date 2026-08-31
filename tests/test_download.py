@@ -5,7 +5,6 @@ import uuid
 from unittest import mock
 
 import httpx
-import pytest
 
 from pysdccc._download import (
     download,
@@ -14,8 +13,6 @@ from pysdccc._download import (
     is_downloaded,
     is_downloaded_sync,
 )
-
-pytestmark = pytest.mark.anyio
 
 
 @mock.patch('pysdccc._download.download')

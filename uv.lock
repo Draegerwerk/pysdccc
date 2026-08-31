@@ -15,6 +15,11 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/da/35/f2287558c17e29fafc8ef3daf819bb9834061cfa43bff8014f7df7f63bdc/anyio-4.14.2-py3-none-any.whl", hash = "sha256:9f505dda5ac9f0c8309b5e8bd445a8c2bf7246f3ce950121e45ea15bc41d1494", size = 125813, upload-time = "2026-07-12T20:29:05.763Z" },
 ]
 
+[package.optional-dependencies]
+trio = [
+    { name = "trio" },
+]
+
 [[package]]
 name = "attrs"
 version = "26.1.0"
@@ -386,25 +391,25 @@ cli = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "anyio", extra = ["trio"] },
     { name = "pysdccc", extra = ["cli"] },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "pytest-html" },
     { name = "ruff" },
-    { name = "trio" },
     { name = "ty" },
 ]
 test = [
+    { name = "anyio", extra = ["trio"] },
     { name = "pysdccc", extra = ["cli"] },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "pytest-html" },
-    { name = "trio" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "anyio", specifier = ">=4.7.0" },
+    { name = "anyio", specifier = ">=4.14.2" },
     { name = "click", marker = "extra == 'cli'", specifier = ">=8.0" },
     { name = "httpx", specifier = ">=0.28.0" },
     { name = "junitparser", specifier = ">=4" },
@@ -414,20 +419,20 @@ provides-extras = ["cli"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "anyio", extras = ["trio"] },
     { name = "pysdccc", extras = ["cli"] },
     { name = "pytest", specifier = ">=8.4.1" },
     { name = "pytest-cov", specifier = ">=6.2.1" },
     { name = "pytest-html", specifier = ">=4" },
-    { name = "ruff", specifier = ">=0.15.20" },
-    { name = "trio", specifier = ">=0.30.0" },
-    { name = "ty", specifier = ">=0.0.56" },
+    { name = "ruff", specifier = ">=0.16.0" },
+    { name = "ty", specifier = ">=0.0.63" },
 ]
 test = [
+    { name = "anyio", extras = ["trio"] },
     { name = "pysdccc", extras = ["cli"] },
     { name = "pytest", specifier = ">=8.4.1" },
     { name = "pytest-cov", specifier = ">=6.2.1" },
     { name = "pytest-html", specifier = ">=4" },
-    { name = "trio", specifier = ">=0.30.0" },
 ]
 
 [[package]]

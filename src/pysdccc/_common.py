@@ -4,9 +4,11 @@ import locale
 import os
 import pathlib
 import sys
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 
 import anyio
+from anyio.abc import ByteReceiveStream
+from anyio.streams.text import TextReceiveStream
 
 DEFAULT_STORAGE_DIRECTORY = pathlib.Path(__file__).parent.joinpath('_sdccc')
 """Default directory to store the downloaded SDCcc versions."""
@@ -17,6 +19,12 @@ ENCODING = 'utf-8' if sys.flags.utf8_mode else locale.getencoding()
 
 SINGLE_CMD_TYPE = str | int | bool | pathlib.Path | anyio.Path
 CMD_TYPE = SINGLE_CMD_TYPE | Iterable[str | int | pathlib.Path | anyio.Path] | None
+
+
+async def _drain_stream(stream: ByteReceiveStream, log: Callable[[object], None]) -> None:
+    """Drain the given stream and log its content."""
+    async for chunk in TextReceiveStream(stream, encoding=ENCODING):
+        log(chunk.strip())
 
 
 def build_command(*args: str, **kwargs: CMD_TYPE) -> Sequence[str]:
@@ -41,22 +49,50 @@ def build_command(*args: str, **kwargs: CMD_TYPE) -> Sequence[str]:
     return command
 
 
-def get_exe_path(local_path: PATH_TYPE) -> os.PathLike[str]:
-    """Get the path to the SDCcc executable.
+def _find_single_exe(local_path: PATH_TYPE, *, checker_tool: bool) -> os.PathLike[str]:
+    """Find exactly one ``.exe`` in ``local_path``, selecting the runner or the checker tool.
 
-    This function searches the specified local path for the SDCcc executable file. It expects exactly one executable
-    file matching the pattern "sdccc-*.exe" to be present in the directory. If no such file or more than one file is
-    found, a FileNotFoundError is raised.
-
-    :param local_path: The local path where the SDCcc executable is expected to be found.
-    :return: The path to the SDCcc executable file.
-    :raises FileNotFoundError: If no executable file or more than one executable file is found in the specified path.
+    :param local_path: The local path to search for executables.
+    :param checker_tool: If True, select the checker tool executable; otherwise select the test runner executable.
+    :return: The path to the matching executable file.
+    :raises FileNotFoundError: If no matching executable or more than one matching executable is found.
     """
     files = [f for f in pathlib.Path(local_path).glob('*.exe') if f.is_file()]
-    if len(files) != 1:
-        msg = f'Expected a single executable file, got {files} in path {local_path}'
+    selected = [f for f in files if ('checker-tool' in f.name) == checker_tool]
+    if len(selected) != 1:
+        kind = 'checker tool' if checker_tool else 'runner'
+        msg = f'Expected a single {kind} executable, got {selected} in path {local_path}'
         raise FileNotFoundError(msg)
-    return files[0]
+    return selected[0]
+
+
+def get_exe_path(local_path: PATH_TYPE) -> os.PathLike[str]:
+    """Get the path to the SDCcc test runner executable.
+
+    This function searches the specified local path for the SDCcc test runner executable.
+    It expects exactly one such file to be present in the directory. If no such file or more than one file is found,
+    a FileNotFoundError is raised.
+
+    :param local_path: The local path where the SDCcc executable is expected to be found.
+    :return: The path to the SDCcc test runner executable file.
+    :raises FileNotFoundError: If no executable file or more than one executable file is found in the specified path.
+    """
+    return _find_single_exe(local_path, checker_tool=False)
+
+
+def get_checker_tool_exe_path(local_path: PATH_TYPE) -> os.PathLike[str]:
+    """Get the path to the SDCcc checker tool executable.
+
+    This function searches the specified local path for the SDCcc checker tool executable.
+    It expects exactly one such file to be present in the directory.
+    If no such file or more than one file is found, a FileNotFoundError is raised. Older SDCcc releases that ship only
+    the test runner do not contain a checker tool, so this raises for those installations.
+
+    :param local_path: The local path where the SDCcc checker tool executable is expected to be found.
+    :return: The path to the SDCcc checker tool executable file.
+    :raises FileNotFoundError: If no checker tool executable or more than one is found in the specified path.
+    """
+    return _find_single_exe(local_path, checker_tool=True)
 
 
 def check_requirements(provided: Mapping[str, Mapping[str, bool]], available: Mapping[str, Mapping[str, bool]]) -> None:

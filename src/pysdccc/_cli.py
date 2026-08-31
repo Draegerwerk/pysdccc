@@ -2,12 +2,14 @@
 
 import contextlib
 import io
+import os
 import pathlib
 import shutil
 import subprocess
 import sys
 import tempfile
 import zipfile
+from collections.abc import Callable
 
 import httpx
 
@@ -146,18 +148,41 @@ def uninstall():
         shutil.rmtree(_common.DEFAULT_STORAGE_DIRECTORY)
 
 
-def sdccc():
+def _passthrough(get_exe: Callable[[_common.PATH_TYPE], os.PathLike[str]]):
+    """Forward the command line arguments to the executable resolved by ``get_exe``.
+
+    :param get_exe: Callable resolving the executable to be called within the storage directory.
+    """
     try:
-        sdccc_exe = pathlib.Path(_common.get_exe_path(_common.DEFAULT_STORAGE_DIRECTORY))
+        exe = pathlib.Path(get_exe(_common.DEFAULT_STORAGE_DIRECTORY))
         subprocess.run(  # noqa: S603
-            [sdccc_exe, *sys.argv[1:]],
+            [str(exe), *sys.argv[1:]],
             check=True,
-            cwd=sdccc_exe.parent,
+            cwd=exe.parent,
         )
+    except subprocess.CalledProcessError as e:
+        click.echo(e, err=True)
+        raise SystemExit(e.returncode) from e
+
+
+def sdccc():
+    """Forward the command line arguments to the SDCcc test runner executable."""
+    try:
+        _passthrough(_common.get_exe_path)
     except FileNotFoundError as e:
         # because this is not a click command, we need to handle the error manually
         click.echo("SDCcc is not installed. Please install using 'pysdccc install <url>'.", err=True)
         raise SystemExit(1) from e
-    except subprocess.CalledProcessError as e:
-        click.echo(e, err=True)
-        raise SystemExit(e.returncode) from e
+
+
+def sdccc_checker_tool():
+    """Forward the command line arguments to the SDCcc checker tool executable."""
+    try:
+        _passthrough(_common.get_checker_tool_exe_path)
+    except FileNotFoundError as e:
+        # because this is not a click command, we need to handle the error manually
+        click.echo(
+            "The checker tool is not installed. Please install a newer version of SDCcc using 'pysdccc install <url>'.",
+            err=True,
+        )
+        raise SystemExit(1) from e

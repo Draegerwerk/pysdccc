@@ -10,7 +10,7 @@ import pytest
 from pysdccc._runner import (
     SdcccRunner,
 )
-from pysdccc._runner_sync import SdcccRunnerSync
+from pysdccc._runner.runner_sync import SdcccRunnerSync
 
 
 @mock.patch.object(SdcccRunner, '__init__', return_value=None)
